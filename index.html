@@ -29,8 +29,8 @@
         
         <!-- UI Elements with improved typography -->
         <a-text id="instructions" position="0 2.5 -4" align="center" 
-                value="Click to Jump or Duck!\nAvoid the red obstacles!" 
-                material="color: white; shader: msdf" width="6" font="roboto"></a-text>
+                value="SPACEBAR = Jump over low obstacles\nS KEY = Duck under high obstacles\nClick = Jump (mobile)" 
+                material="color: white; shader: msdf" width="5" font="roboto"></a-text>
         
         <a-text id="score" position="-3 2.8 -4" align="left" 
                 value="Score: 0" material="color: yellow; shader: msdf" 
@@ -43,246 +43,294 @@
     </a-scene>
 
     <script>
-    // Game state
-    let isGameActive = true;
-    let playerY = 1.6;
-    let obstacles = [];
-    let score = 0;
-    let obstacleSpeed = 0.08;
-    let spawnRate = 3500; // Increased from 2500 for more spacing
-    let isPlayerMoving = false; // Track if player is currently jumping/ducking
+        // Game state
+        let isGameActive = true;
+        let playerY = 1.6;
+        let obstacles = [];
+        let score = 0;
+        let obstacleSpeed = 0.08;
+        let spawnRate = 3500;
+        let isPlayerMoving = false;
 
-    // DOM elements
-    const player = document.querySelector('#player');
-    const obstacleContainer = document.querySelector('#obstacles');
-    const scoreText = document.querySelector('#score');
-    const gameOverText = document.querySelector('#gameOver');
-    const instructionsText = document.querySelector('#instructions');
+        // DOM elements
+        const player = document.querySelector('#player');
+        const obstacleContainer = document.querySelector('#obstacles');
+        const scoreText = document.querySelector('#score');
+        const gameOverText = document.querySelector('#gameOver');
+        const instructionsText = document.querySelector('#instructions');
 
-    // Create obstacles with better randomization
-    function createObstacle() {
-        if (!isGameActive) return;
+        // Create obstacles with better randomization
+        function createObstacle() {
+            if (!isGameActive) return;
 
-        const obstacle = document.createElement('a-box');
-        // More random distribution - 30% chance for high, 70% chance for low
-        const isHighObstacle = Math.random() < 0.3;
-        const xPos = (Math.random() - 0.5) * 2;
-        
-        obstacle.setAttribute('position', {
-            x: xPos,
-            y: isHighObstacle ? 2.2 : 0.5,
-            z: -25
-        });
-        
-        obstacle.setAttribute('geometry', {
-            width: 1,
-            height: isHighObstacle ? 1.8 : 1,
-            depth: 1
-        });
-        
-        obstacle.setAttribute('material', {
-            color: isHighObstacle ? '#e74c3c' : '#c0392b', // Slightly different colors
-            roughness: 0.3,
-            metalness: 0.7,
-            emissive: '#330000',
-            emissiveIntensity: 0.1
-        });
-        
-        obstacle.setAttribute('shadow', 'cast: true; receive: true');
-        
-        obstacle.setAttribute('animation', {
-            property: 'rotation',
-            to: '0 360 0',
-            dur: 4000,
-            loop: true,
-            easing: 'linear'
-        });
+            const obstacle = document.createElement('a-box');
+            // 30% chance for high, 70% chance for low
+            const isHighObstacle = Math.random() < 0.3;
+            const xPos = (Math.random() - 0.5) * 2;
+            
+            obstacle.setAttribute('position', {
+                x: xPos,
+                y: isHighObstacle ? 2.2 : 0.5,
+                z: -25
+            });
+            
+            obstacle.setAttribute('geometry', {
+                width: 1,
+                height: isHighObstacle ? 1.8 : 1,
+                depth: 1
+            });
+            
+            obstacle.setAttribute('material', {
+                color: isHighObstacle ? '#e74c3c' : '#c0392b',
+                roughness: 0.3,
+                metalness: 0.7,
+                emissive: '#330000',
+                emissiveIntensity: 0.1
+            });
+            
+            obstacle.setAttribute('shadow', 'cast: true; receive: true');
+            
+            obstacle.setAttribute('animation', {
+                property: 'rotation',
+                to: '0 360 0',
+                dur: 4000,
+                loop: true,
+                easing: 'linear'
+            });
 
-        obstacle.setAttribute('animation__pulse', {
-            property: 'scale',
-            to: '1.1 1.1 1.1',
-            dur: 1500,
-            dir: 'alternate',
-            loop: true,
-            easing: 'easeInOutSine'
-        });
+            obstacle.setAttribute('animation__pulse', {
+                property: 'scale',
+                to: '1.1 1.1 1.1',
+                dur: 1500,
+                dir: 'alternate',
+                loop: true,
+                easing: 'easeInOutSine'
+            });
 
-        obstacleContainer.appendChild(obstacle);
-        obstacles.push({
-            element: obstacle,
-            isHigh: isHighObstacle,
-            x: xPos
-        });
-    }
+            obstacleContainer.appendChild(obstacle);
+            obstacles.push({
+                element: obstacle,
+                isHigh: isHighObstacle,
+                x: xPos
+            });
+        }
 
-    // Game loop remains the same
-    function gameLoop() {
-        if (!isGameActive) return;
+        // Game loop
+        function gameLoop() {
+            if (!isGameActive) return;
 
-        obstacles.forEach((obs, index) => {
-            const pos = obs.element.getAttribute('position');
-            pos.z += obstacleSpeed;
-            obs.element.setAttribute('position', pos);
+            obstacles.forEach((obs, index) => {
+                const pos = obs.element.getAttribute('position');
+                pos.z += obstacleSpeed;
+                obs.element.setAttribute('position', pos);
 
-            if (pos.z > 3) {
-                obs.element.remove();
-                obstacles.splice(index, 1);
-                score += 10;
-                updateScore();
+                if (pos.z > 3) {
+                    obs.element.remove();
+                    obstacles.splice(index, 1);
+                    score += 10;
+                    updateScore();
+                }
+
+                if (checkCollision(pos, obs)) {
+                    gameOver();
+                    return;
+                }
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Fixed collision detection with better logic
+        function checkCollision(obstaclePos, obstacle) {
+            const playerPos = player.getAttribute('position');
+            
+            // Only check collision when obstacle is very close to player
+            if (obstaclePos.z > -1 && obstaclePos.z < 1) {
+                // Check if player and obstacle are in the same horizontal lane
+                if (Math.abs(obstaclePos.x - playerPos.x) < 0.8) {
+                    
+                    // HIGH OBSTACLE COLLISION:
+                    // Player hits high obstacle if they are standing or jumping (above ground level)
+                    if (obstacle.isHigh) {
+                        // High obstacles are at y=2.2, player needs to be ducking (y=0.8) to avoid
+                        if (playerPos.y > 1.0) { // If player is NOT ducking
+                            console.log(`HIT HIGH OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, should be ducking (0.8)`);
+                            return true;
+                        }
+                    }
+                    // LOW OBSTACLE COLLISION:
+                    // Player hits low obstacle if they are ducking or standing (not jumping high enough)
+                    else {
+                        // Low obstacles are at y=0.5, player needs to be jumping (y=2.4) to avoid
+                        if (playerPos.y < 2.0) { // If player is NOT jumping high enough
+                            console.log(`HIT LOW OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, should be jumping (2.4)`);
+                            return true;
+                        }
+                    }
+                }
             }
+            return false;
+        }
 
-            if (checkCollision(pos, obs)) {
-                gameOver();
+        // Keyboard controls - much clearer
+        document.addEventListener('keydown', function(event) {
+            if (!isGameActive || isPlayerMoving) return;
+            
+            isPlayerMoving = true;
+            
+            if (event.code === 'Space') {
+                // SPACEBAR = JUMP
+                playerY = 2.4;
+                player.setAttribute('animation__move', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 300,
+                    easing: 'easeOutCubic'
+                });
+                console.log('SPACEBAR - JUMPING!');
+                
+            } else if (event.code === 'KeyS') {
+                // S KEY = DUCK
+                playerY = 0.8;
+                player.setAttribute('animation__move', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 250,
+                    easing: 'easeOutCubic'
+                });
+                console.log('S KEY - DUCKING!');
+            } else {
+                isPlayerMoving = false;
                 return;
             }
+            
+            // Return to normal
+            setTimeout(() => {
+                playerY = 1.6;
+                player.setAttribute('animation__return', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 400,
+                    easing: 'easeInOutCubic'
+                });
+                
+                setTimeout(() => {
+                    isPlayerMoving = false;
+                }, 400);
+            }, 2500);
         });
 
-        requestAnimationFrame(gameLoop);
-    }
-
-    function checkCollision(obstaclePos, obstacle) {
-        const playerPos = player.getAttribute('position');
-        
-        if (obstaclePos.z > -1.5 && obstaclePos.z < 1.5) {
-            if (Math.abs(obstaclePos.x - playerPos.x) < 1) {
-                if (obstacle.isHigh && playerPos.y > 1.2) {
-                    return true;
-                }
-                if (!obstacle.isHigh && playerPos.y < 1.4) {
-                    return true;
-                }
+        // Click controls for mobile - always jumps
+        document.addEventListener('click', function() {
+            if (!isGameActive) {
+                restartGame();
+                return;
             }
-        }
-        return false;
-    }
-
-    // Improved player controls with longer duration and better randomization
-    document.addEventListener('click', function() {
-        if (!isGameActive) {
-            restartGame();
-            return;
-        }
-
-        // Don't allow new actions while player is already moving
-        if (isPlayerMoving) return;
-        
-        isPlayerMoving = true;
-        
-        // Better randomization: 40% jump, 60% duck
-        const shouldJump = Math.random() < 0.4;
-        
-        if (shouldJump) {
-            playerY = 2.4; // Jump
+            
+            // Click always jumps (simple for mobile)
+            if (isPlayerMoving) return;
+            
+            isPlayerMoving = true;
+            playerY = 2.4; // Always jump on click
+            
             player.setAttribute('animation__move', {
                 property: 'position',
                 to: `0 ${playerY} 0`,
                 dur: 300,
                 easing: 'easeOutCubic'
             });
-            console.log('Jumping!'); // Debug feedback
-        } else {
-            playerY = 0.8; // Duck
-            player.setAttribute('animation__move', {
-                property: 'position',
-                to: `0 ${playerY} 0`,
-                dur: 250,
-                easing: 'easeOutCubic'
-            });
-            console.log('Ducking!'); // Debug feedback
-        }
-
-        // Stay in position for 2.5 seconds before returning to normal
-        setTimeout(() => {
-            playerY = 1.6;
-            player.setAttribute('animation__return', {
-                property: 'position',
-                to: `0 ${playerY} 0`,
-                dur: 400,
-                easing: 'easeInOutCubic'
-            });
+            console.log('CLICK - JUMPING!');
             
-            // Allow new actions after return animation completes
             setTimeout(() => {
-                isPlayerMoving = false;
-            }, 400);
-        }, 2500); // Increased from 600ms to 2500ms
-    });
+                playerY = 1.6;
+                player.setAttribute('animation__return', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 400,
+                    easing: 'easeInOutCubic'
+                });
+                
+                setTimeout(() => {
+                    isPlayerMoving = false;
+                }, 400);
+            }, 2500);
+        });
 
-    // Spawn obstacles with better spacing
-    function spawnObstacles() {
-        if (!isGameActive) return;
-        
-        createObstacle();
-        
-        // Progressive difficulty with better spacing
-        if (score > 0 && score % 150 === 0) {
-            obstacleSpeed = Math.min(0.15, obstacleSpeed + 0.008);
-            spawnRate = Math.max(2000, spawnRate - 150); // Minimum 2 seconds between obstacles
+        // Spawn obstacles with better spacing
+        function spawnObstacles() {
+            if (!isGameActive) return;
+            
+            createObstacle();
+            
+            // Progressive difficulty with better spacing
+            if (score > 0 && score % 150 === 0) {
+                obstacleSpeed = Math.min(0.15, obstacleSpeed + 0.008);
+                spawnRate = Math.max(2000, spawnRate - 150);
+            }
+            
+            // Add some randomness to spawn timing (±500ms)
+            const randomDelay = spawnRate + (Math.random() - 0.5) * 1000;
+            setTimeout(spawnObstacles, Math.max(2000, randomDelay));
         }
-        
-        // Add some randomness to spawn timing (±500ms)
-        const randomDelay = spawnRate + (Math.random() - 0.5) * 1000;
-        setTimeout(spawnObstacles, Math.max(2000, randomDelay));
-    }
 
-    function updateScore() {
-        scoreText.setAttribute('value', `Score: ${score}`);
-        scoreText.setAttribute('animation__score', {
-            property: 'scale',
-            to: '1.2 1.2 1.2',
-            dur: 150,
-            dir: 'alternate',
-            loop: 2,
-            easing: 'easeInOutQuad'
+        function updateScore() {
+            scoreText.setAttribute('value', `Score: ${score}`);
+            scoreText.setAttribute('animation__score', {
+                property: 'scale',
+                to: '1.2 1.2 1.2',
+                dur: 150,
+                dir: 'alternate',
+                loop: 2,
+                easing: 'easeInOutQuad'
+            });
+        }
+
+        function gameOver() {
+            isGameActive = false;
+            isPlayerMoving = false;
+            
+            instructionsText.setAttribute('visible', false);
+            gameOverText.setAttribute('visible', true);
+            gameOverText.setAttribute('value', `GAME OVER!\nFinal Score: ${score}\nClick to Restart`);
+            
+            gameOverText.setAttribute('animation__appear', {
+                property: 'scale',
+                from: '0 0 0',
+                to: '1 1 1',
+                dur: 600,
+                easing: 'easeOutBounce'
+            });
+        }
+
+        function restartGame() {
+            isGameActive = true;
+            playerY = 1.6;
+            score = 0;
+            obstacleSpeed = 0.08;
+            spawnRate = 3500;
+            isPlayerMoving = false;
+
+            obstacles.forEach(obs => obs.element.remove());
+            obstacles = [];
+
+            player.setAttribute('position', '0 1.6 0');
+            player.removeAttribute('animation__move');
+            player.removeAttribute('animation__return');
+
+            gameOverText.setAttribute('visible', false);
+            instructionsText.setAttribute('visible', true);
+            updateScore();
+
+            gameLoop();
+            setTimeout(spawnObstacles, 2000);
+        }
+
+        // Initialize game
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+            updateScore();
+            gameLoop();
+            setTimeout(spawnObstacles, 3000);
         });
-    }
-
-    function gameOver() {
-        isGameActive = false;
-        isPlayerMoving = false; // Reset movement state
-        
-        instructionsText.setAttribute('visible', false);
-        gameOverText.setAttribute('visible', true);
-        gameOverText.setAttribute('value', `GAME OVER!\nFinal Score: ${score}\nClick to Restart`);
-        
-        gameOverText.setAttribute('animation__appear', {
-            property: 'scale',
-            from: '0 0 0',
-            to: '1 1 1',
-            dur: 600,
-            easing: 'easeOutBounce'
-        });
-    }
-
-    function restartGame() {
-        isGameActive = true;
-        playerY = 1.6;
-        score = 0;
-        obstacleSpeed = 0.08;
-        spawnRate = 3500; // Reset to initial spacing
-        isPlayerMoving = false;
-
-        obstacles.forEach(obs => obs.element.remove());
-        obstacles = [];
-
-        player.setAttribute('position', '0 1.6 0');
-        player.removeAttribute('animation__move');
-        player.removeAttribute('animation__return');
-
-        gameOverText.setAttribute('visible', false);
-        instructionsText.setAttribute('visible', true);
-        updateScore();
-
-        gameLoop();
-        setTimeout(spawnObstacles, 2000); // Wait 2 seconds before first obstacle
-    }
-
-    // Initialize game
-    document.querySelector('a-scene').addEventListener('loaded', function() {
-        updateScore();
-        gameLoop();
-        setTimeout(spawnObstacles, 3000); // Wait 3 seconds before first obstacle
-    });
-</script>
+    </script>
 </body>
 </html>
