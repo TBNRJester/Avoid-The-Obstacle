@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+</head>
+<body>
+    <a-scene background="color: #87CEEB" renderer="antialias: true; colorManagement: true">
+        <!-- Enhanced lighting -->
+        <a-light type="ambient" color="#404040" intensity="0.6"></a-light>
+        <a-light type="directional" position="0 5 0" color="#ffffff" intensity="1.2" 
+                 shadow="type: pcf; mapSize: 2048"></a-light>
+        
+        <!-- Ground with improved materials -->
+        <a-plane position="0 -1 0" rotation="-90 0 0" width="8" height="100" 
+                 material="color: #4a9a4a; roughness: 0.8; metalness: 0.1"
+                 shadow="receive: true"></a-plane>
+        
+        <!-- Player camera/avatar -->
+        <a-camera id="player" position="0 1.6 0" wasd-controls="enabled: false" 
+                  look-controls="enabled: false">
+            <!-- Player visual indicator -->
+            <a-sphere position="0 -0.5 -1.5" radius="0.2" 
+                     material="color: #4285f4; metalness: 0.3; roughness: 0.4"
+                     shadow="cast: true"></a-sphere>
+        </a-camera>
+        
+        <!-- Obstacles container -->
+        <a-entity id="obstacles"></a-entity>
+        
+        <!-- UI Elements with improved typography -->
+        <a-text id="instructions" position="0 2.5 -4" align="center" 
+                value="Click to Jump or Duck!\nAvoid the red obstacles!" 
+                material="color: white; shader: msdf" width="6" font="roboto"></a-text>
+        
+        <a-text id="score" position="-3 2.8 -4" align="left" 
+                value="Score: 0" material="color: yellow; shader: msdf" 
+                width="4" font="roboto"></a-text>
+        
+        <a-text id="gameOver" position="0 2 -4" align="center" 
+                value="GAME OVER!\nClick to Restart" 
+                material="color: red; shader: msdf" width="8" 
+                font="roboto" visible="false"></a-text>
+    </a-scene>
+
+    <script>
+        // Game state
+        let isGameActive = true;
+        let playerY = 1.6;
+        let obstacles = [];
+        let score = 0;
+        let obstacleSpeed = 0.08;
+        let spawnRate = 2500;
+
+        // DOM elements
+        const player = document.querySelector('#player');
+        const obstacleContainer = document.querySelector('#obstacles');
+        const scoreText = document.querySelector('#score');
+        const gameOverText = document.querySelector('#gameOver');
+        const instructionsText = document.querySelector('#instructions');
+
+        // Create obstacles with A-frame 1.7.1 features
+        function createObstacle() {
+            if (!isGameActive) return;
+
+            const obstacle = document.createElement('a-box');
+            const isHighObstacle = Math.random() > 0.5;
+            const xPos = (Math.random() - 0.5) * 2;
+            
+            // Set obstacle properties using 1.7.1 material system
+            obstacle.setAttribute('position', {
+                x: xPos,
+                y: isHighObstacle ? 2.2 : 0.5,
+                z: -25
+            });
+            
+            obstacle.setAttribute('geometry', {
+                width: 1,
+                height: isHighObstacle ? 1.8 : 1,
+                depth: 1
+            });
+            
+            obstacle.setAttribute('material', {
+                color: '#e74c3c',
+                roughness: 0.3,
+                metalness: 0.7,
+                emissive: '#330000',
+                emissiveIntensity: 0.1
+            });
+            
+            obstacle.setAttribute('shadow', 'cast: true; receive: true');
+            
+            // Enhanced animation with easing
+            obstacle.setAttribute('animation', {
+                property: 'rotation',
+                to: '0 360 0',
+                dur: 4000,
+                loop: true,
+                easing: 'linear'
+            });
+
+            // Add pulsing effect
+            obstacle.setAttribute('animation__pulse', {
+                property: 'scale',
+                to: '1.1 1.1 1.1',
+                dur: 1500,
+                dir: 'alternate',
+                loop: true,
+                easing: 'easeInOutSine'
+            });
+
+            obstacleContainer.appendChild(obstacle);
+            obstacles.push({
+                element: obstacle,
+                isHigh: isHighObstacle,
+                x: xPos
+            });
+        }
+
+        // Enhanced game loop
+        function gameLoop() {
+            if (!isGameActive) return;
+
+            // Move obstacles toward player
+            obstacles.forEach((obs, index) => {
+                const pos = obs.element.getAttribute('position');
+                pos.z += obstacleSpeed;
+                obs.element.setAttribute('position', pos);
+
+                // Remove passed obstacles and increase score
+                if (pos.z > 3) {
+                    obs.element.remove();
+                    obstacles.splice(index, 1);
+                    score += 10;
+                    updateScore();
+                }
+
+                // Enhanced collision detection
+                if (checkCollision(pos, obs)) {
+                    gameOver();
+                    return;
+                }
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Improved collision detection
+        function checkCollision(obstaclePos, obstacle) {
+            const playerPos = player.getAttribute('position');
+            
+            // More precise collision bounds
+            if (obstaclePos.z > -1.5 && obstaclePos.z < 1.5) {
+                if (Math.abs(obstaclePos.x - playerPos.x) < 1) {
+                    if (obstacle.isHigh && playerPos.y > 1.2) {
+                        return true;
+                    }
+                    if (!obstacle.isHigh && playerPos.y < 1.4) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Enhanced player controls with smoother animations
+        document.addEventListener('click', function() {
+            if (!isGameActive) {
+                restartGame();
+                return;
+            }
+
+            const action = Math.random() > 0.5 ? 'jump' : 'duck';
+            
+            if (action === 'jump') {
+                playerY = 2.4;
+                player.setAttribute('animation__move', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 250,
+                    easing: 'easeOutCubic'
+                });
+            } else {
+                playerY = 0.8;
+                player.setAttribute('animation__move', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 200,
+                    easing: 'easeOutCubic'
+                });
+            }
+
+            // Return to normal height with smooth transition
+            setTimeout(() => {
+                playerY = 1.6;
+                player.setAttribute('animation__return', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 350,
+                    easing: 'easeInOutCubic'
+                });
+            }, 600);
+        });
+
+        // Progressive difficulty system
+        function spawnObstacles() {
+            if (!isGameActive) return;
+            
+            createObstacle();
+            
+            // Dynamic difficulty scaling
+            if (score > 0 && score % 100 === 0) {
+                obstacleSpeed = Math.min(0.15, obstacleSpeed + 0.01);
+                spawnRate = Math.max(1200, spawnRate - 100);
+            }
+            
+            setTimeout(spawnObstacles, spawnRate);
+        }
+
+        // Update score with smooth animation
+        function updateScore() {
+            scoreText.setAttribute('value', `Score: ${score}`);
+            scoreText.setAttribute('animation__score', {
+                property: 'scale',
+                to: '1.2 1.2 1.2',
+                dur: 150,
+                dir: 'alternate',
+                loop: 2,
+                easing: 'easeInOutQuad'
+            });
+        }
+
+        // Enhanced game over with effects
+        function gameOver() {
+            isGameActive = false;
+            
+            instructionsText.setAttribute('visible', false);
+            gameOverText.setAttribute('visible', true);
+            gameOverText.setAttribute('value', `GAME OVER!\nFinal Score: ${score}\nClick to Restart`);
+            
+            // Game over animation
+            gameOverText.setAttribute('animation__appear', {
+                property: 'scale',
+                from: '0 0 0',
+                to: '1 1 1',
+                dur: 600,
+                easing: 'easeOutBounce'
+            });
+        }
+
+        // Complete game restart
+        function restartGame() {
+            isGameActive = true;
+            playerY = 1.6;
+            score = 0;
+            obstacleSpeed = 0.08;
+            spawnRate = 2500;
+
+            // Clear all obstacles
+            obstacles.forEach(obs => obs.element.remove());
+            obstacles = [];
+
+            // Reset player
+            player.setAttribute('position', '0 1.6 0');
+            player.removeAttribute('animation__move');
+            player.removeAttribute('animation__return');
+
+            // Reset UI
+            gameOverText.setAttribute('visible', false);
+            instructionsText.setAttribute('visible', true);
+            updateScore();
+
+            // Restart game systems
+            gameLoop();
+            setTimeout(spawnObstacles, 1000);
+        }
+
+        // Initialize game when scene is ready
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+            updateScore();
+            gameLoop();
+            setTimeout(spawnObstacles, 1500);
+        });
+    </script>
+</body>
+</html>
