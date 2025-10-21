@@ -4,7 +4,8 @@
     <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
 </head>
 <body>
-    <a-scene background="color: #87CEEB" renderer="antialias: true; colorManagement: true">
+    <a-scene background="color: #87CEEB" renderer="antialias: true; colorManagement: true" 
+             vr-mode-ui="enabled: true" device-orientation-permission-ui="enabled: true">
         <!-- Enhanced lighting -->
         <a-light type="ambient" color="#404040" intensity="0.6"></a-light>
         <a-light type="directional" position="0 5 0" color="#ffffff" intensity="1.2" 
@@ -15,31 +16,56 @@
                  material="color: #4a9a4a; roughness: 0.8; metalness: 0.1"
                  shadow="receive: true"></a-plane>
         
-        <!-- Player camera/avatar -->
-        <a-camera id="player" position="0 1.6 0" wasd-controls="enabled: false" 
-                  look-controls="enabled: false">
-            <!-- Player visual indicator -->
-            <a-sphere position="0 -0.5 -1.5" radius="0.2" 
-                     material="color: #4285f4; metalness: 0.3; roughness: 0.4"
-                     shadow="cast: true"></a-sphere>
-        </a-camera>
+        <!-- VR Rig for Oculus -->
+        <a-entity id="rig" position="0 0 0">
+            <!-- Player camera/avatar with VR controls -->
+            <a-camera id="player" position="0 1.6 0" wasd-controls="enabled: false" 
+                      look-controls="enabled: true">
+                <!-- Player visual indicator -->
+                <a-sphere position="0 -0.5 -1.5" radius="0.2" 
+                         material="color: #4285f4; metalness: 0.3; roughness: 0.4"
+                         shadow="cast: true"></a-sphere>
+            </a-camera>
+
+            <!-- Oculus Touch Controllers -->
+            <a-entity id="leftHand" 
+                      hand-controls="hand: left; handModelStyle: lowPoly; color: #ffcccc"
+                      oculus-touch-controls="hand: left"
+                      raycaster="objects: .clickable"
+                      line="color: #118A7E"></a-entity>
+
+            <a-entity id="rightHand" 
+                      hand-controls="hand: right; handModelStyle: lowPoly; color: #ffcccc"
+                      oculus-touch-controls="hand: right"
+                      raycaster="objects: .clickable"
+                      line="color: #118A7E"></a-entity>
+        </a-entity>
         
         <!-- Obstacles container -->
         <a-entity id="obstacles"></a-entity>
         
-        <!-- UI Elements with improved typography -->
+        <!-- VR-friendly UI Elements positioned around player -->
         <a-text id="instructions" position="0 2.5 -4" align="center" 
-                value="SPACEBAR = Jump | S = Duck | R = Stand\nClick = Jump (mobile)" 
-                material="color: white; shader: msdf" width="5" font="roboto"></a-text>
+                value="VR: Trigger/Grip = Jump | A/X Button = Duck\nKeyboard: SPACEBAR = Jump | S = Duck" 
+                material="color: white; shader: msdf" width="5" font="roboto"
+                look-at="#player"></a-text>
         
         <a-text id="score" position="-3 2.8 -4" align="left" 
                 value="Score: 0" material="color: yellow; shader: msdf" 
-                width="4" font="roboto"></a-text>
+                width="4" font="roboto"
+                look-at="#player"></a-text>
         
         <a-text id="gameOver" position="0 2 -4" align="center" 
-                value="GAME OVER!\nClick to Restart" 
+                value="GAME OVER!\nTrigger to Restart" 
                 material="color: red; shader: msdf" width="8" 
-                font="roboto" visible="false"></a-text>
+                font="roboto" visible="false"
+                look-at="#player"></a-text>
+
+        <!-- VR Control Indicators -->
+        <a-text id="vrStatus" position="3 2.8 -4" align="right" 
+                value="VR Ready!" material="color: green; shader: msdf" 
+                width="3" font="roboto" visible="false"
+                look-at="#player"></a-text>
     </a-scene>
 
     <script>
@@ -51,13 +77,31 @@
         let obstacleSpeed = 0.08;
         let spawnRate = 3500;
         let isPlayerMoving = false;
+        let isVRMode = false;
 
         // DOM elements
         const player = document.querySelector('#player');
+        const rig = document.querySelector('#rig');
         const obstacleContainer = document.querySelector('#obstacles');
         const scoreText = document.querySelector('#score');
         const gameOverText = document.querySelector('#gameOver');
         const instructionsText = document.querySelector('#instructions');
+        const vrStatusText = document.querySelector('#vrStatus');
+        const leftHand = document.querySelector('#leftHand');
+        const rightHand = document.querySelector('#rightHand');
+
+        // Detect VR mode
+        document.querySelector('a-scene').addEventListener('enter-vr', function() {
+            isVRMode = true;
+            vrStatusText.setAttribute('visible', true);
+            console.log('Entered VR mode');
+        });
+
+        document.querySelector('a-scene').addEventListener('exit-vr', function() {
+            isVRMode = false;
+            vrStatusText.setAttribute('visible', false);
+            console.log('Exited VR mode');
+        });
 
         // Create obstacles with better randomization
         function createObstacle() {
@@ -144,11 +188,11 @@
 
         // Collision detection that checks sphere position vs obstacle
         function checkCollision(obstaclePos, obstacle) {
-            const playerPos = player.getAttribute('position');
+            const playerPos = isVRMode ? rig.getAttribute('position') : player.getAttribute('position');
             // Calculate sphere position (sphere is at player position + offset)
             const spherePos = {
                 x: playerPos.x,
-                y: playerPos.y - 0.5, // Sphere is 0.5 units below camera
+                y: (playerPos.y + playerY) - 0.5, // Sphere is 0.5 units below camera
                 z: playerPos.z - 1.5  // Sphere is 1.5 units in front of camera
             };
             
@@ -159,14 +203,12 @@
                     
                     if (obstacle.isHigh) {
                         // HIGH OBSTACLES: Check if sphere is too high (not ducking enough)
-                        // High obstacle bottom is at y=2.2-0.9=1.3, sphere needs to be below that
                         if (spherePos.y > 1.0) {
                             console.log(`COLLISION! Sphere hit HIGH obstacle. Sphere Y: ${spherePos.y.toFixed(2)}, needed to duck below 1.0`);
                             return true;
                         }
                     } else {
                         // LOW OBSTACLES: Check if sphere is too low (not jumping enough)  
-                        // Low obstacle top is at y=0.5+0.5=1.0, sphere needs to be above that
                         if (spherePos.y < 1.8) {
                             console.log(`COLLISION! Sphere hit LOW obstacle. Sphere Y: ${spherePos.y.toFixed(2)}, needed to jump above 1.8`);
                             return true;
@@ -177,117 +219,161 @@
             return false;
         }
 
-        // Smooth keyboard controls
-        document.addEventListener('keydown', function(event) {
-            if (!isGameActive) return;
+        // Jump function
+        function performJump() {
+            if (!isGameActive || isPlayerMoving) return;
             
-            if (event.code === 'Space') {
-                // SPACEBAR = JUMP
-                playerY = 2.4;
-                isPlayerMoving = true;
-                
+            playerY = 2.4;
+            isPlayerMoving = true;
+            
+            if (isVRMode) {
+                rig.setAttribute('animation', {
+                    property: 'position',
+                    to: `0 ${playerY - 1.6} 0`,
+                    dur: 300,
+                    easing: 'easeOutCubic'
+                });
+            } else {
                 player.setAttribute('animation', {
                     property: 'position',
                     to: `0 ${playerY} 0`,
                     dur: 300,
                     easing: 'easeOutCubic'
                 });
-                console.log('SPACEBAR - JUMPING to Y: 2.4, Sphere will be at Y: 1.9');
-                
-                // Return to standing after 2 seconds
-                setTimeout(() => {
-                    if (playerY === 2.4) {
-                        playerY = 1.6;
+            }
+            
+            console.log('JUMPING to Y: 2.4, Sphere will be at Y: 1.9');
+            
+            // Return to standing after 2 seconds
+            setTimeout(() => {
+                if (playerY === 2.4) {
+                    playerY = 1.6;
+                    if (isVRMode) {
+                        rig.setAttribute('animation', {
+                            property: 'position',
+                            to: '0 0 0',
+                            dur: 400,
+                            easing: 'easeInOutCubic'
+                        });
+                    } else {
                         player.setAttribute('animation', {
                             property: 'position',
                             to: `0 ${playerY} 0`,
                             dur: 400,
                             easing: 'easeInOutCubic'
                         });
-                        setTimeout(() => {
-                            isPlayerMoving = false;
-                        }, 400);
                     }
-                }, 2000);
-                
-            } else if (event.code === 'KeyS') {
-                // S KEY = DUCK
-                playerY = 0.8;
-                isPlayerMoving = true;
-                
+                    setTimeout(() => {
+                        isPlayerMoving = false;
+                    }, 400);
+                }
+            }, 2000);
+        }
+
+        // Duck function
+        function performDuck() {
+            if (!isGameActive || isPlayerMoving) return;
+            
+            playerY = 0.8;
+            isPlayerMoving = true;
+            
+            if (isVRMode) {
+                rig.setAttribute('animation', {
+                    property: 'position',
+                    to: `0 ${playerY - 1.6} 0`,
+                    dur: 250,
+                    easing: 'easeOutCubic'
+                });
+            } else {
                 player.setAttribute('animation', {
                     property: 'position',
                     to: `0 ${playerY} 0`,
                     dur: 250,
                     easing: 'easeOutCubic'
                 });
-                console.log('S KEY - DUCKING to Y: 0.8, Sphere will be at Y: 0.3');
-                
-                // Return to standing after 2 seconds
-                setTimeout(() => {
-                    if (playerY === 0.8) {
-                        playerY = 1.6;
+            }
+            
+            console.log('DUCKING to Y: 0.8, Sphere will be at Y: 0.3');
+            
+            // Return to standing after 2 seconds
+            setTimeout(() => {
+                if (playerY === 0.8) {
+                    playerY = 1.6;
+                    if (isVRMode) {
+                        rig.setAttribute('animation', {
+                            property: 'position',
+                            to: '0 0 0',
+                            dur: 400,
+                            easing: 'easeInOutCubic'
+                        });
+                    } else {
                         player.setAttribute('animation', {
                             property: 'position',
                             to: `0 ${playerY} 0`,
                             dur: 400,
                             easing: 'easeInOutCubic'
                         });
-                        setTimeout(() => {
-                            isPlayerMoving = false;
-                        }, 400);
                     }
-                }, 2000);
-                
+                    setTimeout(() => {
+                        isPlayerMoving = false;
+                    }, 400);
+                }
+            }, 2000);
+        }
+
+        // VR Controller Events - Left Hand
+        leftHand.addEventListener('triggerdown', performJump);
+        leftHand.addEventListener('gripdown', performJump);
+        leftHand.addEventListener('abuttondown', performDuck); // A button (left controller)
+
+        // VR Controller Events - Right Hand
+        rightHand.addEventListener('triggerdown', performJump);
+        rightHand.addEventListener('gripdown', performJump);
+        rightHand.addEventListener('bbuttondown', performDuck); // B button (right controller)
+        rightHand.addEventListener('xbuttondown', performDuck); // X button (right controller)
+
+        // Keyboard controls (for non-VR)
+        document.addEventListener('keydown', function(event) {
+            if (!isGameActive) return;
+            
+            if (event.code === 'Space') {
+                performJump();
+            } else if (event.code === 'KeyS') {
+                performDuck();
             } else if (event.code === 'KeyR') {
                 // R KEY = Return to standing immediately
                 playerY = 1.6;
                 isPlayerMoving = false;
                 
-                player.setAttribute('animation', {
-                    property: 'position',
-                    to: `0 ${playerY} 0`,
-                    dur: 300,
-                    easing: 'easeInOutCubic'
-                });
+                if (isVRMode) {
+                    rig.setAttribute('animation', {
+                        property: 'position',
+                        to: '0 0 0',
+                        dur: 300,
+                        easing: 'easeInOutCubic'
+                    });
+                } else {
+                    player.setAttribute('animation', {
+                        property: 'position',
+                        to: `0 ${playerY} 0`,
+                        dur: 300,
+                        easing: 'easeInOutCubic'
+                    });
+                }
                 console.log('R KEY - STANDING at Y: 1.6, Sphere will be at Y: 1.1');
             }
         });
 
-        // Click controls
+        // Click controls (for non-VR)
         document.addEventListener('click', function() {
             if (!isGameActive) {
                 restartGame();
                 return;
             }
             
-            // Click always jumps
-            playerY = 2.4;
-            isPlayerMoving = true;
-            
-            player.setAttribute('animation', {
-                property: 'position',
-                to: `0 ${playerY} 0`,
-                dur: 300,
-                easing: 'easeOutCubic'
-            });
-            console.log('CLICK - JUMPING to Y: 2.4, Sphere will be at Y: 1.9');
-            
-            // Return to standing after 2 seconds
-            setTimeout(() => {
-                if (playerY === 2.4) {
-                    playerY = 1.6;
-                    player.setAttribute('animation', {
-                        property: 'position',
-                        to: `0 ${playerY} 0`,
-                        dur: 400,
-                        easing: 'easeInOutCubic'
-                    });
-                    setTimeout(() => {
-                        isPlayerMoving = false;
-                    }, 400);
-                }
-            }, 2000);
+            if (!isVRMode) {
+                performJump();
+            }
         });
 
         // Spawn obstacles with better spacing
@@ -308,62 +394,4 @@
         }
 
         function updateScore() {
-            scoreText.setAttribute('value', `Score: ${score}`);
-            scoreText.setAttribute('animation__score', {
-                property: 'scale',
-                to: '1.2 1.2 1.2',
-                dur: 150,
-                dir: 'alternate',
-                loop: 2,
-                easing: 'easeInOutQuad'
-            });
-        }
-
-        function gameOver() {
-            isGameActive = false;
-            isPlayerMoving = false;
-            
-            instructionsText.setAttribute('visible', false);
-            gameOverText.setAttribute('visible', true);
-            gameOverText.setAttribute('value', `GAME OVER!\nFinal Score: ${score}\nClick to Restart`);
-            
-            gameOverText.setAttribute('animation__appear', {
-                property: 'scale',
-                from: '0 0 0',
-                to: '1 1 1',
-                dur: 600,
-                easing: 'easeOutBounce'
-            });
-        }
-
-        function restartGame() {
-            isGameActive = true;
-            playerY = 1.6;
-            score = 0;
-            obstacleSpeed = 0.08;
-            spawnRate = 3500;
-            isPlayerMoving = false;
-
-            obstacles.forEach(obs => obs.element.remove());
-            obstacles = [];
-
-            player.setAttribute('position', '0 1.6 0');
-            player.removeAttribute('animation');
-
-            gameOverText.setAttribute('visible', false);
-            instructionsText.setAttribute('visible', true);
-            updateScore();
-
-            gameLoop();
-            setTimeout(spawnObstacles, 2000);
-        }
-
-        // Initialize game
-        document.querySelector('a-scene').addEventListener('loaded', function() {
-            updateScore();
-            gameLoop();
-            setTimeout(spawnObstacles, 3000);
-        });
-    </script>
-</body>
-</html>
+            scoreText.setAttribute('value', `Score: ${
