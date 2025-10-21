@@ -124,41 +124,51 @@
                 pos.z += obstacleSpeed;
                 obs.element.setAttribute('position', pos);
 
+                // Check collision BEFORE removing obstacles
+                if (checkCollision(pos, obs)) {
+                    gameOver();
+                    return;
+                }
+
+                // Remove obstacles that have passed the player
                 if (pos.z > 3) {
                     obs.element.remove();
                     obstacles.splice(index, 1);
                     score += 10;
                     updateScore();
                 }
-
-                if (checkCollision(pos, obs)) {
-                    gameOver();
-                    return;
-                }
             });
 
             requestAnimationFrame(gameLoop);
         }
 
-        // Much more forgiving collision detection
+        // Collision detection that checks sphere position vs obstacle
         function checkCollision(obstaclePos, obstacle) {
             const playerPos = player.getAttribute('position');
+            // Calculate sphere position (sphere is at player position + offset)
+            const spherePos = {
+                x: playerPos.x,
+                y: playerPos.y - 0.5, // Sphere is 0.5 units below camera
+                z: playerPos.z - 1.5  // Sphere is 1.5 units in front of camera
+            };
             
-            // Only check collision when obstacle is very close to player
-            if (obstaclePos.z > -0.8 && obstaclePos.z < 0.8) {
-                // Check if player and obstacle are in the same horizontal lane
-                if (Math.abs(obstaclePos.x - playerPos.x) < 1.2) {
+            // Check if obstacle is in collision range with the sphere
+            if (obstaclePos.z > spherePos.z - 0.5 && obstaclePos.z < spherePos.z + 0.5) {
+                // Check horizontal alignment between sphere and obstacle
+                if (Math.abs(obstaclePos.x - spherePos.x) < 0.8) {
                     
                     if (obstacle.isHigh) {
-                        // HIGH OBSTACLES (at y=2.2): Player must be ducking (below y=1.0) to be safe
-                        if (playerPos.y > 1.0) {
-                            console.log(`HIT HIGH OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, obstacle Y: ${obstaclePos.y}, need to duck below 1.0`);
+                        // HIGH OBSTACLES: Check if sphere is too high (not ducking enough)
+                        // High obstacle bottom is at y=2.2-0.9=1.3, sphere needs to be below that
+                        if (spherePos.y > 1.0) {
+                            console.log(`COLLISION! Sphere hit HIGH obstacle. Sphere Y: ${spherePos.y.toFixed(2)}, needed to duck below 1.0`);
                             return true;
                         }
                     } else {
-                        // LOW OBSTACLES (at y=0.5): Player must be jumping (above y=2.0) to be safe  
-                        if (playerPos.y < 2.0) {
-                            console.log(`HIT LOW OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, obstacle Y: ${obstaclePos.y}, need to jump above 2.0`);
+                        // LOW OBSTACLES: Check if sphere is too low (not jumping enough)  
+                        // Low obstacle top is at y=0.5+0.5=1.0, sphere needs to be above that
+                        if (spherePos.y < 1.8) {
+                            console.log(`COLLISION! Sphere hit LOW obstacle. Sphere Y: ${spherePos.y.toFixed(2)}, needed to jump above 1.8`);
                             return true;
                         }
                     }
@@ -182,7 +192,7 @@
                     dur: 300,
                     easing: 'easeOutCubic'
                 });
-                console.log('SPACEBAR - JUMPING to Y: 2.4');
+                console.log('SPACEBAR - JUMPING to Y: 2.4, Sphere will be at Y: 1.9');
                 
                 // Return to standing after 2 seconds
                 setTimeout(() => {
@@ -211,7 +221,7 @@
                     dur: 250,
                     easing: 'easeOutCubic'
                 });
-                console.log('S KEY - DUCKING to Y: 0.8');
+                console.log('S KEY - DUCKING to Y: 0.8, Sphere will be at Y: 0.3');
                 
                 // Return to standing after 2 seconds
                 setTimeout(() => {
@@ -240,7 +250,7 @@
                     dur: 300,
                     easing: 'easeInOutCubic'
                 });
-                console.log('R KEY - STANDING at Y: 1.6');
+                console.log('R KEY - STANDING at Y: 1.6, Sphere will be at Y: 1.1');
             }
         });
 
@@ -261,7 +271,7 @@
                 dur: 300,
                 easing: 'easeOutCubic'
             });
-            console.log('CLICK - JUMPING to Y: 2.4');
+            console.log('CLICK - JUMPING to Y: 2.4, Sphere will be at Y: 1.9');
             
             // Return to standing after 2 seconds
             setTimeout(() => {
