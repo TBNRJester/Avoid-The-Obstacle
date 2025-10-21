@@ -103,12 +103,11 @@
             console.log('Exited VR mode');
         });
 
-        // Create obstacles with better randomization
+        // Create obstacles
         function createObstacle() {
             if (!isGameActive) return;
 
             const obstacle = document.createElement('a-box');
-            // 30% chance for high, 70% chance for low
             const isHighObstacle = Math.random() < 0.3;
             const xPos = (Math.random() - 0.5) * 2;
             
@@ -168,13 +167,11 @@
                 pos.z += obstacleSpeed;
                 obs.element.setAttribute('position', pos);
 
-                // Check collision BEFORE removing obstacles
                 if (checkCollision(pos, obs)) {
                     gameOver();
                     return;
                 }
 
-                // Remove obstacles that have passed the player
                 if (pos.z > 3) {
                     obs.element.remove();
                     obstacles.splice(index, 1);
@@ -186,31 +183,23 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Collision detection that checks sphere position vs obstacle
+        // Collision detection
         function checkCollision(obstaclePos, obstacle) {
             const playerPos = isVRMode ? rig.getAttribute('position') : player.getAttribute('position');
-            // Calculate sphere position (sphere is at player position + offset)
             const spherePos = {
                 x: playerPos.x,
-                y: (playerPos.y + playerY) - 0.5, // Sphere is 0.5 units below camera
-                z: playerPos.z - 1.5  // Sphere is 1.5 units in front of camera
+                y: (playerPos.y + playerY) - 0.5,
+                z: playerPos.z - 1.5
             };
             
-            // Check if obstacle is in collision range with the sphere
             if (obstaclePos.z > spherePos.z - 0.5 && obstaclePos.z < spherePos.z + 0.5) {
-                // Check horizontal alignment between sphere and obstacle
                 if (Math.abs(obstaclePos.x - spherePos.x) < 0.8) {
-                    
                     if (obstacle.isHigh) {
-                        // HIGH OBSTACLES: Check if sphere is too high (not ducking enough)
                         if (spherePos.y > 1.0) {
-                            console.log(`COLLISION! Sphere hit HIGH obstacle. Sphere Y: ${spherePos.y.toFixed(2)}, needed to duck below 1.0`);
                             return true;
                         }
                     } else {
-                        // LOW OBSTACLES: Check if sphere is too low (not jumping enough)  
                         if (spherePos.y < 1.8) {
-                            console.log(`COLLISION! Sphere hit LOW obstacle. Sphere Y: ${spherePos.y.toFixed(2)}, needed to jump above 1.8`);
                             return true;
                         }
                     }
@@ -242,9 +231,6 @@
                 });
             }
             
-            console.log('JUMPING to Y: 2.4, Sphere will be at Y: 1.9');
-            
-            // Return to standing after 2 seconds
             setTimeout(() => {
                 if (playerY === 2.4) {
                     playerY = 1.6;
@@ -293,9 +279,6 @@
                 });
             }
             
-            console.log('DUCKING to Y: 0.8, Sphere will be at Y: 0.3');
-            
-            // Return to standing after 2 seconds
             setTimeout(() => {
                 if (playerY === 0.8) {
                     playerY = 1.6;
@@ -321,18 +304,17 @@
             }, 2000);
         }
 
-        // VR Controller Events - Left Hand
+        // VR Controller Events
         leftHand.addEventListener('triggerdown', performJump);
         leftHand.addEventListener('gripdown', performJump);
-        leftHand.addEventListener('abuttondown', performDuck); // A button (left controller)
+        leftHand.addEventListener('abuttondown', performDuck);
 
-        // VR Controller Events - Right Hand
         rightHand.addEventListener('triggerdown', performJump);
         rightHand.addEventListener('gripdown', performJump);
-        rightHand.addEventListener('bbuttondown', performDuck); // B button (right controller)
-        rightHand.addEventListener('xbuttondown', performDuck); // X button (right controller)
+        rightHand.addEventListener('bbuttondown', performDuck);
+        rightHand.addEventListener('xbuttondown', performDuck);
 
-        // Keyboard controls (for non-VR)
+        // Keyboard controls
         document.addEventListener('keydown', function(event) {
             if (!isGameActive) return;
             
@@ -341,7 +323,6 @@
             } else if (event.code === 'KeyS') {
                 performDuck();
             } else if (event.code === 'KeyR') {
-                // R KEY = Return to standing immediately
                 playerY = 1.6;
                 isPlayerMoving = false;
                 
@@ -360,11 +341,10 @@
                         easing: 'easeInOutCubic'
                     });
                 }
-                console.log('R KEY - STANDING at Y: 1.6, Sphere will be at Y: 1.1');
             }
         });
 
-        // Click controls (for non-VR)
+        // Click controls
         document.addEventListener('click', function() {
             if (!isGameActive) {
                 restartGame();
@@ -376,22 +356,76 @@
             }
         });
 
-        // Spawn obstacles with better spacing
+        // Spawn obstacles
         function spawnObstacles() {
             if (!isGameActive) return;
             
             createObstacle();
             
-            // Progressive difficulty with better spacing
             if (score > 0 && score % 150 === 0) {
                 obstacleSpeed = Math.min(0.15, obstacleSpeed + 0.008);
                 spawnRate = Math.max(2000, spawnRate - 150);
             }
             
-            // Add some randomness to spawn timing (±500ms)
             const randomDelay = spawnRate + (Math.random() - 0.5) * 1000;
             setTimeout(spawnObstacles, Math.max(2000, randomDelay));
         }
 
         function updateScore() {
-            scoreText.setAttribute('value', `Score: ${
+            scoreText.setAttribute('value', `Score: ${score}`);
+            scoreText.setAttribute('animation__score', {
+                property: 'scale',
+                to: '1.2 1.2 1.2',
+                dur: 150,
+                dir: 'alternate',
+                loop: 2,
+                easing: 'easeInOutQuad'
+            });
+        }
+
+        function gameOver() {
+            isGameActive = false;
+            isPlayerMoving = false;
+            
+            instructionsText.setAttribute('visible', false);
+            gameOverText.setAttribute('visible', true);
+            gameOverText.setAttribute('value', `GAME OVER!\nFinal Score: ${score}\nTrigger to Restart`);
+            
+            gameOverText.setAttribute('animation__appear', {
+                property: 'scale',
+                from: '0 0 0',
+                to: '1 1 1',
+                dur: 600,
+                easing: 'easeOutBounce'
+            });
+        }
+
+        function restartGame() {
+            isGameActive = true;
+            playerY = 1.6;
+            score = 0;
+            obstacleSpeed = 0.08;
+            spawnRate = 3500;
+            isPlayerMoving = false;
+
+            obstacles.forEach(obs => obs.element.remove());
+            obstacles = [];
+
+            player.setAttribute('position', '0 1.6 0');
+            rig.setAttribute('position', '0 0 0');
+            player.removeAttribute('animation');
+            rig.removeAttribute('animation');
+
+            gameOverText.setAttribute('visible', false);
+            instructionsText.setAttribute('visible', true);
+            updateScore();
+
+            gameLoop();
+            setTimeout(spawnObstacles, 2000);
+        }
+
+        // Initialize game
+        document.querySelector('
+</script>
+</body>
+</html>
