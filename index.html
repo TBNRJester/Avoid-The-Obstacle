@@ -29,7 +29,7 @@
         
         <!-- UI Elements with improved typography -->
         <a-text id="instructions" position="0 2.5 -4" align="center" 
-                value="SPACEBAR = Jump over low obstacles\nS KEY = Duck under high obstacles\nClick = Jump (mobile)" 
+                value="SPACEBAR = Jump | S = Duck | R = Stand\nClick = Jump (mobile)\nActions can be interrupted!" 
                 material="color: white; shader: msdf" width="5" font="roboto"></a-text>
         
         <a-text id="score" position="-3 2.8 -4" align="left" 
@@ -172,88 +172,128 @@
             return false;
         }
 
-        // Keyboard controls - much clearer
+        // Fixed keyboard controls - can interrupt current action
         document.addEventListener('keydown', function(event) {
-            if (!isGameActive || isPlayerMoving) return;
+            if (!isGameActive) return;
             
-            isPlayerMoving = true;
+            // Clear any existing animations and timers
+            player.removeAttribute('animation__move');
+            player.removeAttribute('animation__return');
             
             if (event.code === 'Space') {
                 // SPACEBAR = JUMP
                 playerY = 2.4;
+                isPlayerMoving = true;
+                
                 player.setAttribute('animation__move', {
                     property: 'position',
                     to: `0 ${playerY} 0`,
-                    dur: 300,
+                    dur: 200, // Faster response
                     easing: 'easeOutCubic'
                 });
                 console.log('SPACEBAR - JUMPING!');
                 
+                // Auto-return after 2 seconds, but allow interruption
+                setTimeout(() => {
+                    if (playerY === 2.4) { // Only return if still jumping
+                        playerY = 1.6;
+                        player.setAttribute('animation__return', {
+                            property: 'position',
+                            to: `0 ${playerY} 0`,
+                            dur: 300,
+                            easing: 'easeInOutCubic'
+                        });
+                        setTimeout(() => {
+                            isPlayerMoving = false;
+                        }, 300);
+                    }
+                }, 2000);
+                
             } else if (event.code === 'KeyS') {
                 // S KEY = DUCK
                 playerY = 0.8;
+                isPlayerMoving = true;
+                
                 player.setAttribute('animation__move', {
                     property: 'position',
                     to: `0 ${playerY} 0`,
-                    dur: 250,
+                    dur: 200, // Faster response
                     easing: 'easeOutCubic'
                 });
                 console.log('S KEY - DUCKING!');
-            } else {
-                isPlayerMoving = false;
-                return;
-            }
-            
-            // Return to normal
-            setTimeout(() => {
+                
+                // Auto-return after 2 seconds, but allow interruption
+                setTimeout(() => {
+                    if (playerY === 0.8) { // Only return if still ducking
+                        playerY = 1.6;
+                        player.setAttribute('animation__return', {
+                            property: 'position',
+                            to: `0 ${playerY} 0`,
+                            dur: 300,
+                            easing: 'easeInOutCubic'
+                        });
+                        setTimeout(() => {
+                            isPlayerMoving = false;
+                        }, 300);
+                    }
+                }, 2000);
+                
+            } else if (event.code === 'KeyR') {
+                // R KEY = Return to normal position immediately
                 playerY = 1.6;
+                isPlayerMoving = false;
+                
+                player.removeAttribute('animation__move');
+                player.removeAttribute('animation__return');
+                
                 player.setAttribute('animation__return', {
                     property: 'position',
                     to: `0 ${playerY} 0`,
-                    dur: 400,
+                    dur: 200,
                     easing: 'easeInOutCubic'
                 });
-                
-                setTimeout(() => {
-                    isPlayerMoving = false;
-                }, 400);
-            }, 2500);
+                console.log('R KEY - RETURNING TO NORMAL!');
+            }
         });
 
-        // Click controls for mobile - always jumps
+        // Fixed click controls - can interrupt current action
         document.addEventListener('click', function() {
             if (!isGameActive) {
                 restartGame();
                 return;
             }
             
-            // Click always jumps (simple for mobile)
-            if (isPlayerMoving) return;
+            // Clear any existing animations
+            player.removeAttribute('animation__move');
+            player.removeAttribute('animation__return');
             
+            // Click always jumps
+            playerY = 2.4;
             isPlayerMoving = true;
-            playerY = 2.4; // Always jump on click
             
             player.setAttribute('animation__move', {
                 property: 'position',
                 to: `0 ${playerY} 0`,
-                dur: 300,
+                dur: 200, // Faster response
                 easing: 'easeOutCubic'
             });
             console.log('CLICK - JUMPING!');
             
+            // Auto-return after 2 seconds, but allow interruption
             setTimeout(() => {
-                playerY = 1.6;
-                player.setAttribute('animation__return', {
-                    property: 'position',
-                    to: `0 ${playerY} 0`,
-                    dur: 400,
-                    easing: 'easeInOutCubic'
-                });
-                
-                setTimeout(() => {
-                    isPlayerMoving = false;
-                }, 400);
-            }, 2500);
+                if (playerY === 2.4) { // Only return if still jumping
+                    playerY = 1.6;
+                    player.setAttribute('animation__return', {
+                        property: 'position',
+                        to: `0 ${playerY} 0`,
+                        dur: 300,
+                        easing: 'easeInOutCubic'
+                    });
+                    setTimeout(() => {
+                        isPlayerMoving = false;
+                    }, 300);
+                }
+            }, 2000);
         });
 
         // Spawn obstacles with better spacing
