@@ -425,7 +425,11 @@
         }
 
         // Initialize game
-        document.querySelector('
-</script>
+        document.querySelector('a-scene').addEventListener('loaded', function() {
+            updateScore();
+            gameLoop();
+            setTimeout(spawnObstacles, 3000);
+        });
+    </script>
 </body>
 </html>
