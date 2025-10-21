@@ -29,7 +29,7 @@
         
         <!-- UI Elements with improved typography -->
         <a-text id="instructions" position="0 2.5 -4" align="center" 
-                value="SPACEBAR = Jump | S = Duck | R = Stand\nClick = Jump (mobile)\nActions can be interrupted!" 
+                value="SPACEBAR = Jump | S = Duck | R = Stand\nClick = Jump (mobile)" 
                 material="color: white; shader: msdf" width="5" font="roboto"></a-text>
         
         <a-text id="score" position="-3 2.8 -4" align="left" 
@@ -45,13 +45,11 @@
     <script>
         // Game state
         let isGameActive = true;
-        let playerY = 1.6;
+        let playerState = 'standing'; // 'standing', 'jumping', 'ducking'
         let obstacles = [];
         let score = 0;
         let obstacleSpeed = 0.08;
         let spawnRate = 3500;
-        let isPlayerMoving = false;
-        let collisionImmune = false; // Add collision immunity tracking
 
         // DOM elements
         const player = document.querySelector('#player');
@@ -141,187 +139,90 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Updated collision detection with immunity check
+        // Much simpler collision detection based on player state, not position
         function checkCollision(obstaclePos, obstacle) {
-            // Skip collision check if player is immune (transitioning)
-            if (collisionImmune) {
-                return false;
-            }
-            
-            const playerPos = player.getAttribute('position');
-            
-            // Only check collision when obstacle is very close (smaller window)
-            if (obstaclePos.z > -0.5 && obstaclePos.z < 0.5) {
-                // Check if player and obstacle are in the same horizontal lane
-                if (Math.abs(obstaclePos.x - playerPos.x) < 0.8) {
+            // Only check collision when obstacle is right at the player
+            if (obstaclePos.z > -0.3 && obstaclePos.z < 0.3) {
+                // Check horizontal alignment
+                if (Math.abs(obstaclePos.x) < 1) {
                     
-                    if (obstacle.isHigh) {
-                        // High obstacles: more forgiving - need to be clearly ducking
-                        if (playerPos.y > 1.2) { 
-                            console.log(`HIT HIGH OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, needed to duck (below 1.2)`);
-                            return true;
-                        }
-                    } else {
-                        // Low obstacles: more forgiving - need to be clearly jumping
-                        if (playerPos.y < 1.8) { 
-                            console.log(`HIT LOW OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, needed to jump (above 1.8)`);
-                            return true;
-                        }
+                    console.log(`Obstacle at player! Type: ${obstacle.isHigh ? 'HIGH' : 'LOW'}, Player state: ${playerState}`);
+                    
+                    // Simple state-based collision
+                    if (obstacle.isHigh && playerState !== 'ducking') {
+                        console.log('HIT HIGH OBSTACLE - needed to be ducking!');
+                        return true;
+                    }
+                    
+                    if (!obstacle.isHigh && playerState !== 'jumping') {
+                        console.log('HIT LOW OBSTACLE - needed to be jumping!');
+                        return true;
                     }
                 }
             }
             return false;
         }
 
-        // Improved keyboard controls with collision immunity
+        // Simplified controls with clear state tracking
         document.addEventListener('keydown', function(event) {
             if (!isGameActive) return;
             
-            // Clear any existing animations and timers
-            player.removeAttribute('animation__move');
-            player.removeAttribute('animation__return');
-            
             if (event.code === 'Space') {
-                // SPACEBAR = JUMP
-                playerY = 2.4;
-                isPlayerMoving = true;
-                collisionImmune = true; // Immune during transition
+                // JUMP
+                playerState = 'jumping';
+                player.setAttribute('position', '0 2.4 0');
+                console.log('JUMPING - State: jumping');
                 
-                player.setAttribute('animation__move', {
-                    property: 'position',
-                    to: `0 ${playerY} 0`,
-                    dur: 200,
-                    easing: 'easeOutCubic'
-                });
-                console.log('SPACEBAR - JUMPING!');
-                
-                // Remove immunity once jump is complete
+                // Return to standing after 2 seconds
                 setTimeout(() => {
-                    collisionImmune = false;
-                }, 250);
-                
-                // Auto-return after 2 seconds
-                setTimeout(() => {
-                    if (playerY === 2.4) {
-                        collisionImmune = true; // Immune during return
-                        playerY = 1.6;
-                        player.setAttribute('animation__return', {
-                            property: 'position',
-                            to: `0 ${playerY} 0`,
-                            dur: 300,
-                            easing: 'easeInOutCubic'
-                        });
-                        setTimeout(() => {
-                            isPlayerMoving = false;
-                            collisionImmune = false; // Remove immunity when stable
-                        }, 350);
+                    if (playerState === 'jumping') {
+                        playerState = 'standing';
+                        player.setAttribute('position', '0 1.6 0');
+                        console.log('Returned to standing');
                     }
                 }, 2000);
                 
             } else if (event.code === 'KeyS') {
-                // S KEY = DUCK
-                playerY = 0.8;
-                isPlayerMoving = true;
-                collisionImmune = true; // Immune during transition
+                // DUCK
+                playerState = 'ducking';
+                player.setAttribute('position', '0 0.8 0');
+                console.log('DUCKING - State: ducking');
                 
-                player.setAttribute('animation__move', {
-                    property: 'position',
-                    to: `0 ${playerY} 0`,
-                    dur: 200,
-                    easing: 'easeOutCubic'
-                });
-                console.log('S KEY - DUCKING!');
-                
-                // Remove immunity once duck is complete
+                // Return to standing after 2 seconds
                 setTimeout(() => {
-                    collisionImmune = false;
-                }, 250);
-                
-                // Auto-return after 2 seconds
-                setTimeout(() => {
-                    if (playerY === 0.8) {
-                        collisionImmune = true; // Immune during return
-                        playerY = 1.6;
-                        player.setAttribute('animation__return', {
-                            property: 'position',
-                            to: `0 ${playerY} 0`,
-                            dur: 300,
-                            easing: 'easeInOutCubic'
-                        });
-                        setTimeout(() => {
-                            isPlayerMoving = false;
-                            collisionImmune = false; // Remove immunity when stable
-                        }, 350);
+                    if (playerState === 'ducking') {
+                        playerState = 'standing';
+                        player.setAttribute('position', '0 1.6 0');
+                        console.log('Returned to standing');
                     }
                 }, 2000);
                 
             } else if (event.code === 'KeyR') {
-                // R KEY = Return to normal position immediately
-                collisionImmune = true;
-                playerY = 1.6;
-                isPlayerMoving = false;
-                
-                player.removeAttribute('animation__move');
-                player.removeAttribute('animation__return');
-                
-                player.setAttribute('animation__return', {
-                    property: 'position',
-                    to: `0 ${playerY} 0`,
-                    dur: 200,
-                    easing: 'easeInOutCubic'
-                });
-                console.log('R KEY - RETURNING TO NORMAL!');
-                
-                setTimeout(() => {
-                    collisionImmune = false;
-                }, 250);
+                // RETURN TO STANDING
+                playerState = 'standing';
+                player.setAttribute('position', '0 1.6 0');
+                console.log('STANDING - State: standing');
             }
         });
 
-        // Updated click controls with immunity
+        // Click controls
         document.addEventListener('click', function() {
             if (!isGameActive) {
                 restartGame();
                 return;
             }
             
-            // Clear any existing animations
-            player.removeAttribute('animation__move');
-            player.removeAttribute('animation__return');
-            
             // Click always jumps
-            playerY = 2.4;
-            isPlayerMoving = true;
-            collisionImmune = true; // Immune during transition
+            playerState = 'jumping';
+            player.setAttribute('position', '0 2.4 0');
+            console.log('CLICK JUMP - State: jumping');
             
-            player.setAttribute('animation__move', {
-                property: 'position',
-                to: `0 ${playerY} 0`,
-                dur: 200,
-                easing: 'easeOutCubic'
-            });
-            console.log('CLICK - JUMPING!');
-            
-            // Remove immunity once jump is complete
+            // Return to standing after 2 seconds
             setTimeout(() => {
-                collisionImmune = false;
-            }, 250);
-            
-            // Auto-return after 2 seconds
-            setTimeout(() => {
-                if (playerY === 2.4) {
-                    collisionImmune = true; // Immune during return
-                    playerY = 1.6;
-                    player.setAttribute('animation__return', {
-                        property: 'position',
-                        to: `0 ${playerY} 0`,
-                        dur: 300,
-                        easing: 'easeInOutCubic'
-                    });
-                    setTimeout(() => {
-                        isPlayerMoving = false;
-                        collisionImmune = false; // Remove immunity when stable
-                    }, 350);
+                if (playerState === 'jumping') {
+                    playerState = 'standing';
+                    player.setAttribute('position', '0 1.6 0');
+                    console.log('Returned to standing');
                 }
             }, 2000);
         });
@@ -357,8 +258,6 @@
 
         function gameOver() {
             isGameActive = false;
-            isPlayerMoving = false;
-            collisionImmune = false; // Reset immunity on game over
             
             instructionsText.setAttribute('visible', false);
             gameOverText.setAttribute('visible', true);
@@ -375,19 +274,15 @@
 
         function restartGame() {
             isGameActive = true;
-            playerY = 1.6;
+            playerState = 'standing';
             score = 0;
             obstacleSpeed = 0.08;
             spawnRate = 3500;
-            isPlayerMoving = false;
-            collisionImmune = false; // Reset immunity on restart
 
             obstacles.forEach(obs => obs.element.remove());
             obstacles = [];
 
             player.setAttribute('position', '0 1.6 0');
-            player.removeAttribute('animation__move');
-            player.removeAttribute('animation__return');
 
             gameOverText.setAttribute('visible', false);
             instructionsText.setAttribute('visible', true);
