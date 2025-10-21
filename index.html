@@ -45,11 +45,12 @@
     <script>
         // Game state
         let isGameActive = true;
-        let playerState = 'standing'; // 'standing', 'jumping', 'ducking'
+        let playerY = 1.6;
         let obstacles = [];
         let score = 0;
         let obstacleSpeed = 0.08;
         let spawnRate = 3500;
+        let isPlayerMoving = false;
 
         // DOM elements
         const player = document.querySelector('#player');
@@ -139,69 +140,107 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Much simpler collision detection based on player state, not position
+        // Much more forgiving collision detection
         function checkCollision(obstaclePos, obstacle) {
-            // Only check collision when obstacle is right at the player
-            if (obstaclePos.z > -0.3 && obstaclePos.z < 0.3) {
-                // Check horizontal alignment
-                if (Math.abs(obstaclePos.x) < 1) {
+            const playerPos = player.getAttribute('position');
+            
+            // Only check collision when obstacle is very close to player
+            if (obstaclePos.z > -0.8 && obstaclePos.z < 0.8) {
+                // Check if player and obstacle are in the same horizontal lane
+                if (Math.abs(obstaclePos.x - playerPos.x) < 1.2) {
                     
-                    console.log(`Obstacle at player! Type: ${obstacle.isHigh ? 'HIGH' : 'LOW'}, Player state: ${playerState}`);
-                    
-                    // Simple state-based collision
-                    if (obstacle.isHigh && playerState !== 'ducking') {
-                        console.log('HIT HIGH OBSTACLE - needed to be ducking!');
-                        return true;
-                    }
-                    
-                    if (!obstacle.isHigh && playerState !== 'jumping') {
-                        console.log('HIT LOW OBSTACLE - needed to be jumping!');
-                        return true;
+                    if (obstacle.isHigh) {
+                        // HIGH OBSTACLES (at y=2.2): Player must be ducking (below y=1.0) to be safe
+                        if (playerPos.y > 1.0) {
+                            console.log(`HIT HIGH OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, obstacle Y: ${obstaclePos.y}, need to duck below 1.0`);
+                            return true;
+                        }
+                    } else {
+                        // LOW OBSTACLES (at y=0.5): Player must be jumping (above y=2.0) to be safe  
+                        if (playerPos.y < 2.0) {
+                            console.log(`HIT LOW OBSTACLE! Player Y: ${playerPos.y.toFixed(2)}, obstacle Y: ${obstaclePos.y}, need to jump above 2.0`);
+                            return true;
+                        }
                     }
                 }
             }
             return false;
         }
 
-        // Simplified controls with clear state tracking
+        // Smooth keyboard controls
         document.addEventListener('keydown', function(event) {
             if (!isGameActive) return;
             
             if (event.code === 'Space') {
-                // JUMP
-                playerState = 'jumping';
-                player.setAttribute('position', '0 2.4 0');
-                console.log('JUMPING - State: jumping');
+                // SPACEBAR = JUMP
+                playerY = 2.4;
+                isPlayerMoving = true;
+                
+                player.setAttribute('animation', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 300,
+                    easing: 'easeOutCubic'
+                });
+                console.log('SPACEBAR - JUMPING to Y: 2.4');
                 
                 // Return to standing after 2 seconds
                 setTimeout(() => {
-                    if (playerState === 'jumping') {
-                        playerState = 'standing';
-                        player.setAttribute('position', '0 1.6 0');
-                        console.log('Returned to standing');
+                    if (playerY === 2.4) {
+                        playerY = 1.6;
+                        player.setAttribute('animation', {
+                            property: 'position',
+                            to: `0 ${playerY} 0`,
+                            dur: 400,
+                            easing: 'easeInOutCubic'
+                        });
+                        setTimeout(() => {
+                            isPlayerMoving = false;
+                        }, 400);
                     }
                 }, 2000);
                 
             } else if (event.code === 'KeyS') {
-                // DUCK
-                playerState = 'ducking';
-                player.setAttribute('position', '0 0.8 0');
-                console.log('DUCKING - State: ducking');
+                // S KEY = DUCK
+                playerY = 0.8;
+                isPlayerMoving = true;
+                
+                player.setAttribute('animation', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 250,
+                    easing: 'easeOutCubic'
+                });
+                console.log('S KEY - DUCKING to Y: 0.8');
                 
                 // Return to standing after 2 seconds
                 setTimeout(() => {
-                    if (playerState === 'ducking') {
-                        playerState = 'standing';
-                        player.setAttribute('position', '0 1.6 0');
-                        console.log('Returned to standing');
+                    if (playerY === 0.8) {
+                        playerY = 1.6;
+                        player.setAttribute('animation', {
+                            property: 'position',
+                            to: `0 ${playerY} 0`,
+                            dur: 400,
+                            easing: 'easeInOutCubic'
+                        });
+                        setTimeout(() => {
+                            isPlayerMoving = false;
+                        }, 400);
                     }
                 }, 2000);
                 
             } else if (event.code === 'KeyR') {
-                // RETURN TO STANDING
-                playerState = 'standing';
-                player.setAttribute('position', '0 1.6 0');
-                console.log('STANDING - State: standing');
+                // R KEY = Return to standing immediately
+                playerY = 1.6;
+                isPlayerMoving = false;
+                
+                player.setAttribute('animation', {
+                    property: 'position',
+                    to: `0 ${playerY} 0`,
+                    dur: 300,
+                    easing: 'easeInOutCubic'
+                });
+                console.log('R KEY - STANDING at Y: 1.6');
             }
         });
 
@@ -213,16 +252,30 @@
             }
             
             // Click always jumps
-            playerState = 'jumping';
-            player.setAttribute('position', '0 2.4 0');
-            console.log('CLICK JUMP - State: jumping');
+            playerY = 2.4;
+            isPlayerMoving = true;
+            
+            player.setAttribute('animation', {
+                property: 'position',
+                to: `0 ${playerY} 0`,
+                dur: 300,
+                easing: 'easeOutCubic'
+            });
+            console.log('CLICK - JUMPING to Y: 2.4');
             
             // Return to standing after 2 seconds
             setTimeout(() => {
-                if (playerState === 'jumping') {
-                    playerState = 'standing';
-                    player.setAttribute('position', '0 1.6 0');
-                    console.log('Returned to standing');
+                if (playerY === 2.4) {
+                    playerY = 1.6;
+                    player.setAttribute('animation', {
+                        property: 'position',
+                        to: `0 ${playerY} 0`,
+                        dur: 400,
+                        easing: 'easeInOutCubic'
+                    });
+                    setTimeout(() => {
+                        isPlayerMoving = false;
+                    }, 400);
                 }
             }, 2000);
         });
@@ -258,6 +311,7 @@
 
         function gameOver() {
             isGameActive = false;
+            isPlayerMoving = false;
             
             instructionsText.setAttribute('visible', false);
             gameOverText.setAttribute('visible', true);
@@ -274,15 +328,17 @@
 
         function restartGame() {
             isGameActive = true;
-            playerState = 'standing';
+            playerY = 1.6;
             score = 0;
             obstacleSpeed = 0.08;
             spawnRate = 3500;
+            isPlayerMoving = false;
 
             obstacles.forEach(obs => obs.element.remove());
             obstacles = [];
 
             player.setAttribute('position', '0 1.6 0');
+            player.removeAttribute('animation');
 
             gameOverText.setAttribute('visible', false);
             instructionsText.setAttribute('visible', true);
