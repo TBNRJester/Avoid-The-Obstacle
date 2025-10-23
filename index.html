@@ -183,7 +183,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Collision detection
+        // Much more forgiving collision detection
         function checkCollision(obstaclePos, obstacle) {
             const playerPos = isVRMode ? rig.getAttribute('position') : player.getAttribute('position');
             const spherePos = {
@@ -192,14 +192,23 @@
                 z: playerPos.z - 1.5
             };
             
-            if (obstaclePos.z > spherePos.z - 0.5 && obstaclePos.z < spherePos.z + 0.5) {
-                if (Math.abs(obstaclePos.x - spherePos.x) < 0.8) {
+            // Only check collision when obstacle is very close to sphere
+            if (obstaclePos.z > spherePos.z - 0.3 && obstaclePos.z < spherePos.z + 0.3) {
+                // Check horizontal alignment - more forgiving
+                if (Math.abs(obstaclePos.x - spherePos.x) < 1.0) {
+                    
                     if (obstacle.isHigh) {
-                        if (spherePos.y > 1.0) {
+                        // HIGH OBSTACLES: Much more forgiving ducking
+                        // High obstacles are at y=2.2, sphere needs to be well below 0.8 to be safe
+                        if (spherePos.y > 0.8) {
+                            console.log(`HIT HIGH OBSTACLE! Sphere Y: ${spherePos.y.toFixed(2)}, needed to duck below 0.8`);
                             return true;
                         }
                     } else {
-                        if (spherePos.y < 1.8) {
+                        // LOW OBSTACLES: Much more forgiving jumping
+                        // Low obstacles are at y=0.5, sphere needs to be well above 2.0 to be safe
+                        if (spherePos.y < 2.0) {
+                            console.log(`HIT LOW OBSTACLE! Sphere Y: ${spherePos.y.toFixed(2)}, needed to jump above 2.0`);
                             return true;
                         }
                     }
