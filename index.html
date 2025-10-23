@@ -44,53 +44,47 @@
         <!-- Obstacles container (hidden during intro) -->
         <a-entity id="obstacles" visible="false"></a-entity>
         
-        <!-- Compact Introduction Screen -->
+        <!-- Very Compact Introduction Screen -->
         <a-entity id="introScreen" visible="true">
-            <!-- Compact background -->
-            <a-plane position="0 0 -3" width="8" height="5" 
-                     material="color: #34495e; opacity: 0.95"></a-plane>
+            <!-- Small centered background -->
+            <a-plane position="0 0.5 -2.5" width="5" height="3" 
+                     material="color: #34495e; opacity: 0.9"></a-plane>
             
-            <!-- Game Title -->
-            <a-text position="0 2 -2.9" align="center" 
+            <!-- Title -->
+            <a-text position="0 1.7 -2.4" align="center" 
                     value="AVOID THE OBSTACLES" 
-                    material="color: #e74c3c; shader: msdf" width="10" font="roboto"></a-text>
+                    material="color: #e74c3c; shader: msdf" width="8" font="roboto"></a-text>
             
-            <!-- Compact Instructions -->
-            <a-text position="0 1.3 -2.9" align="center" 
-                    value="Navigate your blue sphere through red obstacles!" 
-                    material="color: #ecf0f1; shader: msdf" width="6" font="roboto"></a-text>
+            <!-- Simple description -->
+            <a-text position="0 1.2 -2.4" align="center" 
+                    value="Jump over short boxes • Duck under tall boxes" 
+                    material="color: #ecf0f1; shader: msdf" width="4" font="roboto"></a-text>
             
-            <!-- Controls -->
-            <a-text position="0 0.7 -2.9" align="center" 
-                    value="SPACEBAR = Jump  |  S = Duck  |  VR: Trigger = Jump, A/X = Duck" 
-                    material="color: #3498db; shader: msdf" width="4" font="roboto"></a-text>
+            <!-- Controls in one line -->
+            <a-text position="0 0.8 -2.4" align="center" 
+                    value="SPACEBAR = Jump | S = Duck" 
+                    material="color: #3498db; shader: msdf" width="3" font="roboto"></a-text>
             
-            <!-- Simple gameplay info -->
-            <a-text position="0 0.2 -2.9" align="center" 
-                    value="Jump over short obstacles • Duck under tall obstacles" 
-                    material="color: #95a5a6; shader: msdf" width="4" font="roboto"></a-text>
-            
-            <!-- Compact Start Button -->
-            <a-box id="startButton" position="0 -0.5 -2.8" width="2.5" height="0.5" depth="0.1"
+            <!-- Start Button -->
+            <a-box id="startButton" position="0 0.2 -2.3" width="2" height="0.4" depth="0.1"
                    material="color: #27ae60; roughness: 0.3; metalness: 0.7"
                    class="clickable"
-                   animation="property: scale; to: 1.05 1.05 1.05; dur: 1000; dir: alternate; loop: true; easing: easeInOutQuad">
+                   animation="property: scale; to: 1.1 1.1 1.1; dur: 1000; dir: alternate; loop: true">
                 <a-text position="0 0 0.06" align="center" 
-                        value="START GAME" 
-                        material="color: white; shader: msdf" width="6" font="roboto"></a-text>
+                        value="START" 
+                        material="color: white; shader: msdf" width="5" font="roboto"></a-text>
             </a-box>
             
-            <!-- Simple start instruction -->
-            <a-text position="0 -1.2 -2.9" align="center" 
-                    value="Click button or press SPACEBAR to start" 
-                    material="color: #e67e22; shader: msdf" width="4" font="roboto"
-                    animation="property: opacity; to: 0.6; dur: 1500; dir: alternate; loop: true"></a-text>
+            <!-- Simple instruction -->
+            <a-text position="0 -0.2 -2.4" align="center" 
+                    value="Click START or press SPACEBAR" 
+                    material="color: #e67e22; shader: msdf" width="3" font="roboto"></a-text>
         </a-entity>
         
         <!-- Game UI Elements (hidden during intro) -->
         <a-text id="instructions" position="0 2.5 -4" align="center" 
-                value="VR: Trigger/Grip = Jump | A/X Button = Duck\nKeyboard: SPACEBAR = Jump | S = Duck" 
-                material="color: white; shader: msdf" width="5" font="roboto"
+                value="SPACEBAR = Jump | S = Duck | R = Stand" 
+                material="color: white; shader: msdf" width="4" font="roboto"
                 look-at="#player" visible="false"></a-text>
         
         <a-text id="score" position="-3 2.8 -4" align="left" 
@@ -100,7 +94,7 @@
         
         <a-text id="gameOver" position="0 2 -4" align="center" 
                 value="GAME OVER!\nClick to Restart" 
-                material="color: red; shader: msdf" width="8" 
+                material="color: red; shader: msdf" width="6" 
                 font="roboto" visible="false"
                 look-at="#player"></a-text>
 
@@ -142,13 +136,11 @@
         document.querySelector('a-scene').addEventListener('enter-vr', function() {
             isVRMode = true;
             if (gameStarted) vrStatusText.setAttribute('visible', true);
-            console.log('Entered VR mode');
         });
 
         document.querySelector('a-scene').addEventListener('exit-vr', function() {
             isVRMode = false;
             vrStatusText.setAttribute('visible', false);
-            console.log('Exited VR mode');
         });
 
         // Start Button Click Handler
@@ -161,35 +153,28 @@
             gameStarted = true;
             isGameActive = true;
             
-            // Change background to game environment
             document.querySelector('a-scene').setAttribute('background', 'color: #87CEEB');
             
-            // Hide intro screen with animation
             introScreen.setAttribute('animation', {
                 property: 'scale',
                 to: '0 0 0',
-                dur: 500,
+                dur: 400,
                 easing: 'easeInCubic'
             });
             
             setTimeout(() => {
                 introScreen.setAttribute('visible', false);
-                
-                // Show game environment
                 ground.setAttribute('visible', true);
                 playerSphere.setAttribute('visible', true);
                 obstacleContainer.setAttribute('visible', true);
-                
-                // Show game UI
                 instructionsText.setAttribute('visible', true);
                 scoreText.setAttribute('visible', true);
                 if (isVRMode) vrStatusText.setAttribute('visible', true);
                 
-                // Start game systems
                 updateScore();
                 gameLoop();
                 setTimeout(spawnObstacles, 2000);
-            }, 500);
+            }, 400);
         }
 
         // Create obstacles
@@ -272,7 +257,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Proper hitbox collision detection
+        // Collision detection
         function checkCollision(obstaclePos, obstacle) {
             const playerPos = isVRMode ? rig.getAttribute('position') : player.getAttribute('position');
             const spherePos = {
@@ -306,12 +291,7 @@
             const zDistance = Math.abs(sphereHitbox.z - obstacleHitbox.z);
             const zCollision = zDistance < (obstacleHitbox.depth / 2 + sphereHitbox.radius);
             
-            if (xCollision && yCollision && zCollision) {
-                console.log(`COLLISION DETECTED!`);
-                return true;
-            }
-            
-            return false;
+            return (xCollision && yCollision && zCollision);
         }
 
         // Jump function
@@ -535,7 +515,7 @@
             setTimeout(spawnObstacles, 2000);
         }
 
-        // Initialize game with intro screen
+        // Initialize game with compact intro screen
         document.querySelector('a-scene').addEventListener('loaded', function() {
             console.log('Game loaded - showing compact introduction screen');
         });
