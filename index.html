@@ -44,46 +44,41 @@
         <!-- Obstacles container (hidden during intro) -->
         <a-entity id="obstacles" visible="false"></a-entity>
         
-        <!-- Very Compact Introduction Screen -->
+        <!-- Ultra-Compact Introduction Screen -->
         <a-entity id="introScreen" visible="true">
-            <!-- Small centered background -->
-            <a-plane position="0 0 -2.5" width="4.5" height="2.8" 
+            <!-- Very small centered background -->
+            <a-plane position="0 0 -2" width="3" height="2" 
                      material="color: #34495e; opacity: 0.95"></a-plane>
             
             <!-- Title -->
-            <a-text position="0 1.2 -2.4" align="center" 
-                    value="AVOID THE OBSTACLES" 
-                    material="color: #e74c3c; shader: msdf" width="6" font="roboto"></a-text>
+            <a-text position="0 0.7 -1.9" align="center" 
+                    value="AVOID OBSTACLES" 
+                    material="color: #e74c3c; shader: msdf" width="4" font="roboto"></a-text>
             
-            <!-- Condensed Win/Lose -->
-            <a-text position="0 0.8 -2.4" align="center" 
-                    value="🎯 Survive • 💀 Don't touch red boxes • 🏆 Beat high score" 
-                    material="color: #2ecc71; shader: msdf" width="3" font="roboto"></a-text>
+            <!-- Simple rule -->
+            <a-text position="0 0.3 -1.9" align="center" 
+                    value="Don't touch red boxes!" 
+                    material="color: #2ecc71; shader: msdf" width="2" font="roboto"></a-text>
             
             <!-- Controls -->
-            <a-text position="0 0.4 -2.4" align="center" 
-                    value="SPACEBAR = Jump | S = Duck" 
-                    material="color: #3498db; shader: msdf" width="2.5" font="roboto"></a-text>
-            
-            <!-- Strategy -->
-            <a-text position="0 0 -2.4" align="center" 
-                    value="Jump over short • Duck under tall" 
-                    material="color: #95a5a6; shader: msdf" width="2.5" font="roboto"></a-text>
+            <a-text position="0 0 -1.9" align="center" 
+                    value="SPACE=Jump S=Duck" 
+                    material="color: #3498db; shader: msdf" width="2" font="roboto"></a-text>
             
             <!-- Start Button -->
-            <a-box id="startButton" position="0 -0.5 -2.3" width="1.8" height="0.3" depth="0.1"
+            <a-box id="startButton" position="0 -0.4 -1.8" width="1.5" height="0.25" depth="0.05"
                    material="color: #27ae60; roughness: 0.3; metalness: 0.7"
                    class="clickable"
                    animation="property: scale; to: 1.1 1.1 1.1; dur: 1000; dir: alternate; loop: true">
-                <a-text position="0 0 0.06" align="center" 
+                <a-text position="0 0 0.03" align="center" 
                         value="START" 
-                        material="color: white; shader: msdf" width="4" font="roboto"></a-text>
+                        material="color: white; shader: msdf" width="3" font="roboto"></a-text>
             </a-box>
             
             <!-- Simple instruction -->
-            <a-text position="0 -0.9 -2.4" align="center" 
-                    value="Click START or press SPACEBAR" 
-                    material="color: #e67e22; shader: msdf" width="2.5" font="roboto"></a-text>
+            <a-text position="0 -0.7 -1.9" align="center" 
+                    value="Click or press SPACE" 
+                    material="color: #e67e22; shader: msdf" width="2" font="roboto"></a-text>
         </a-entity>
         
         <!-- Game UI Elements (hidden during intro) -->
@@ -375,7 +370,6 @@
             
             const zDistance = Math.abs(sphereHitbox.z - obstacleHitbox.z);
             const zCollision = zDistance < (obstacleHitbox.depth / 2 + sphereHitbox.radius);
-            
             return (xCollision && yCollision && zCollision);
         }
 
@@ -618,9 +612,9 @@
             setTimeout(spawnObstacles, 2000);
         }
 
-        // Initialize game with compact intro screen
+        // Initialize game with ultra-compact intro screen
         document.querySelector('a-scene').addEventListener('loaded', function() {
-            console.log('Game loaded - compact introduction screen ready');
+            console.log('Game loaded - ultra-compact introduction screen ready');
         });
     </script>
 </body>
