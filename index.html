@@ -44,60 +44,47 @@
         <!-- Obstacles container (hidden during intro) -->
         <a-entity id="obstacles" visible="false"></a-entity>
         
-        <!-- Introduction Screen -->
+        <!-- Compact Introduction Screen -->
         <a-entity id="introScreen" visible="true">
-            <!-- Background for intro -->
-            <a-plane position="0 0 -3" width="12" height="8" 
-                     material="color: #34495e; opacity: 0.9"></a-plane>
+            <!-- Compact background -->
+            <a-plane position="0 0 -3" width="8" height="5" 
+                     material="color: #34495e; opacity: 0.95"></a-plane>
             
             <!-- Game Title -->
-            <a-text position="0 3 -2.9" align="center" 
+            <a-text position="0 2 -2.9" align="center" 
                     value="AVOID THE OBSTACLES" 
-                    material="color: #e74c3c; shader: msdf" width="14" font="roboto"
-                    animation="property: scale; to: 1.1 1.1 1.1; dur: 2000; dir: alternate; loop: true; easing: easeInOutSine"></a-text>
+                    material="color: #e74c3c; shader: msdf" width="10" font="roboto"></a-text>
             
-            <!-- Game Description -->
-            <a-text position="0 2.2 -2.9" align="center" 
-                    value="Navigate your blue sphere through incoming obstacles!" 
-                    material="color: #ecf0f1; shader: msdf" width="8" font="roboto"></a-text>
+            <!-- Compact Instructions -->
+            <a-text position="0 1.3 -2.9" align="center" 
+                    value="Navigate your blue sphere through red obstacles!" 
+                    material="color: #ecf0f1; shader: msdf" width="6" font="roboto"></a-text>
             
-            <!-- Controls Section -->
-            <a-text position="0 1.5 -2.9" align="center" 
-                    value="CONTROLS" 
-                    material="color: #f39c12; shader: msdf" width="8" font="roboto"></a-text>
+            <!-- Controls -->
+            <a-text position="0 0.7 -2.9" align="center" 
+                    value="SPACEBAR = Jump  |  S = Duck  |  VR: Trigger = Jump, A/X = Duck" 
+                    material="color: #3498db; shader: msdf" width="4" font="roboto"></a-text>
             
-            <a-text position="0 0.9 -2.9" align="center" 
-                    value="KEYBOARD:\n• SPACEBAR = Jump (avoid low obstacles)\n• S KEY = Duck (avoid high obstacles)\n• R KEY = Return to standing" 
-                    material="color: #3498db; shader: msdf" width="6" font="roboto"></a-text>
+            <!-- Simple gameplay info -->
+            <a-text position="0 0.2 -2.9" align="center" 
+                    value="Jump over short obstacles • Duck under tall obstacles" 
+                    material="color: #95a5a6; shader: msdf" width="4" font="roboto"></a-text>
             
-            <a-text position="0 0.1 -2.9" align="center" 
-                    value="VR CONTROLS:\n• TRIGGER/GRIP = Jump\n• A/X BUTTON = Duck" 
-                    material="color: #2ecc71; shader: msdf" width="6" font="roboto"></a-text>
-            
-            <!-- Gameplay Instructions -->
-            <a-text position="0 -0.7 -2.9" align="center" 
-                    value="GAMEPLAY" 
-                    material="color: #f39c12; shader: msdf" width="8" font="roboto"></a-text>
-            
-            <a-text position="0 -1.3 -2.9" align="center" 
-                    value="• Jump over SHORT red obstacles\n• Duck under TALL red obstacles\n• Score points for each obstacle avoided\n• Game speed increases with score!" 
-                    material="color: #95a5a6; shader: msdf" width="6" font="roboto"></a-text>
-            
-            <!-- Start Button -->
-            <a-box id="startButton" position="0 -2.5 -2.8" width="3" height="0.6" depth="0.1"
+            <!-- Compact Start Button -->
+            <a-box id="startButton" position="0 -0.5 -2.8" width="2.5" height="0.5" depth="0.1"
                    material="color: #27ae60; roughness: 0.3; metalness: 0.7"
                    class="clickable"
                    animation="property: scale; to: 1.05 1.05 1.05; dur: 1000; dir: alternate; loop: true; easing: easeInOutQuad">
                 <a-text position="0 0 0.06" align="center" 
                         value="START GAME" 
-                        material="color: white; shader: msdf" width="8" font="roboto"></a-text>
+                        material="color: white; shader: msdf" width="6" font="roboto"></a-text>
             </a-box>
             
-            <!-- Click instruction -->
-            <a-text position="0 -3.3 -2.9" align="center" 
-                    value="Click the button above or press SPACEBAR to start!" 
-                    material="color: #e67e22; shader: msdf" width="5" font="roboto"
-                    animation="property: opacity; to: 0.5; dur: 1500; dir: alternate; loop: true"></a-text>
+            <!-- Simple start instruction -->
+            <a-text position="0 -1.2 -2.9" align="center" 
+                    value="Click button or press SPACEBAR to start" 
+                    material="color: #e67e22; shader: msdf" width="4" font="roboto"
+                    animation="property: opacity; to: 0.6; dur: 1500; dir: alternate; loop: true"></a-text>
         </a-entity>
         
         <!-- Game UI Elements (hidden during intro) -->
@@ -550,7 +537,7 @@
 
         // Initialize game with intro screen
         document.querySelector('a-scene').addEventListener('loaded', function() {
-            console.log('Game loaded - showing introduction screen');
+            console.log('Game loaded - showing compact introduction screen');
         });
     </script>
 </body>
