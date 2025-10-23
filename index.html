@@ -183,37 +183,54 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Much more forgiving collision detection
+        // Proper hitbox collision detection
         function checkCollision(obstaclePos, obstacle) {
             const playerPos = isVRMode ? rig.getAttribute('position') : player.getAttribute('position');
             const spherePos = {
                 x: playerPos.x,
-                y: (playerPos.y + playerY) - 0.5,
-                z: playerPos.z - 1.5
+                y: (playerPos.y + playerY) - 0.5, // Sphere is 0.5 units below camera
+                z: playerPos.z - 1.5  // Sphere is 1.5 units in front of camera
             };
             
-            // Only check collision when obstacle is very close to sphere
-            if (obstaclePos.z > spherePos.z - 0.3 && obstaclePos.z < spherePos.z + 0.3) {
-                // Check horizontal alignment - more forgiving
-                if (Math.abs(obstaclePos.x - spherePos.x) < 1.0) {
-                    
-                    if (obstacle.isHigh) {
-                        // HIGH OBSTACLES: Much more forgiving ducking
-                        // High obstacles are at y=2.2, sphere needs to be well below 0.8 to be safe
-                        if (spherePos.y > 0.8) {
-                            console.log(`HIT HIGH OBSTACLE! Sphere Y: ${spherePos.y.toFixed(2)}, needed to duck below 0.8`);
-                            return true;
-                        }
-                    } else {
-                        // LOW OBSTACLES: Much more forgiving jumping
-                        // Low obstacles are at y=0.5, sphere needs to be well above 2.0 to be safe
-                        if (spherePos.y < 2.0) {
-                            console.log(`HIT LOW OBSTACLE! Sphere Y: ${spherePos.y.toFixed(2)}, needed to jump above 2.0`);
-                            return true;
-                        }
-                    }
-                }
+            // Define actual hitboxes
+            const sphereHitbox = {
+                x: spherePos.x,
+                y: spherePos.y,
+                z: spherePos.z,
+                radius: 0.2 // Sphere radius
+            };
+            
+            const obstacleHitbox = {
+                x: obstaclePos.x,
+                y: obstaclePos.y + (obstacle.isHigh ? 0.9 : 0.5), // Center Y of obstacle
+                z: obstaclePos.z,
+                width: 1.0,   // Box width
+                height: obstacle.isHigh ? 1.8 : 1.0, // Box height
+                depth: 1.0    // Box depth
+            };
+            
+            // Check if sphere intersects with box hitbox
+            // X-axis collision
+            const xDistance = Math.abs(sphereHitbox.x - obstacleHitbox.x);
+            const xCollision = xDistance < (obstacleHitbox.width / 2 + sphereHitbox.radius);
+            
+            // Y-axis collision
+            const yDistance = Math.abs(sphereHitbox.y - obstacleHitbox.y);
+            const yCollision = yDistance < (obstacleHitbox.height / 2 + sphereHitbox.radius);
+            
+            // Z-axis collision
+            const zDistance = Math.abs(sphereHitbox.z - obstacleHitbox.z);
+            const zCollision = zDistance < (obstacleHitbox.depth / 2 + sphereHitbox.radius);
+            
+            // All three axes must collide for a hit
+            if (xCollision && yCollision && zCollision) {
+                console.log(`COLLISION DETECTED!`);
+                console.log(`Sphere: x=${sphereHitbox.x.toFixed(2)}, y=${sphereHitbox.y.toFixed(2)}, z=${sphereHitbox.z.toFixed(2)}`);
+                console.log(`Obstacle: x=${obstacleHitbox.x.toFixed(2)}, y=${obstacleHitbox.y.toFixed(2)}, z=${obstacleHitbox.z.toFixed(2)}`);
+                console.log(`Distances: x=${xDistance.toFixed(2)}, y=${yDistance.toFixed(2)}, z=${zDistance.toFixed(2)}`);
+                return true;
             }
+            
             return false;
         }
 
