@@ -44,31 +44,31 @@
         <!-- Obstacles container (hidden during intro) -->
         <a-entity id="obstacles" visible="false"></a-entity>
         
-        <!-- Repositioned Introduction Screen -->
+        <!-- Repositioned Introduction Screen with Fixed Colors -->
         <a-entity id="introScreen" visible="true">
             <!-- Background positioned higher up -->
             <a-plane position="0 1.5 -2.5" width="4" height="2.5" 
                      material="color: #34495e; opacity: 0.95"></a-plane>
             
-            <!-- Title -->
+            <!-- Title - Red -->
             <a-text position="0 2.4 -2.4" align="center" 
                     value="AVOID OBSTACLES" 
-                    material="color: #e74c3c; shader: msdf" width="4" font="roboto"></a-text>
+                    color="#e74c3c" width="4" font="roboto"></a-text>
             
-            <!-- Simple rule -->
+            <!-- Simple rule - Green -->
             <a-text position="0 2 -2.4" align="center" 
                     value="Don't touch red boxes!" 
-                    material="color: #FF0000; shader: msdf" width="3" font="roboto"></a-text>
+                    color="#2ecc71" width="3" font="roboto"></a-text>
             
-            <!-- Controls -->
+            <!-- Controls - Blue -->
             <a-text position="0 1.6 -2.4" align="center" 
                     value="SPACEBAR = Jump | S = Duck" 
-                    material="color: #3498db; shader: msdf" width="3" font="roboto"></a-text>
+                    color="#3498db" width="3" font="roboto"></a-text>
             
-            <!-- Strategy -->
+            <!-- Strategy - Gray -->
             <a-text position="0 1.2 -2.4" align="center" 
                     value="Jump over short • Duck under tall" 
-                    material="color: #95a5a6; shader: msdf" width="3" font="roboto"></a-text>
+                    color="#95a5a6" width="3" font="roboto"></a-text>
             
             <!-- Start Button -->
             <a-box id="startButton" position="0 0.7 -2.3" width="2" height="0.4" depth="0.1"
@@ -77,46 +77,46 @@
                    animation="property: scale; to: 1.1 1.1 1.1; dur: 1000; dir: alternate; loop: true">
                 <a-text position="0 0 0.06" align="center" 
                         value="START GAME" 
-                        material="color: white; shader: msdf" width="4" font="roboto"></a-text>
+                        color="white" width="4" font="roboto"></a-text>
             </a-box>
             
-            <!-- Simple instruction -->
+            <!-- Simple instruction - Orange -->
             <a-text position="0 0.3 -2.4" align="center" 
                     value="Click START or press SPACEBAR" 
-                    material="color: #e67e22; shader: msdf" width="3" font="roboto"></a-text>
+                    color="#e67e22" width="3" font="roboto"></a-text>
         </a-entity>
         
         <!-- Game UI Elements (hidden during intro) -->
         <a-text id="instructions" position="0 2.5 -4" align="center" 
                 value="SPACEBAR = Jump | S = Duck | R = Stand" 
-                material="color: white; shader: msdf" width="4" font="roboto"
+                color="white" width="4" font="roboto"
                 look-at="#player" visible="false"></a-text>
         
         <a-text id="score" position="-3 2.8 -4" align="left" 
-                value="Score: 0" material="color: yellow; shader: msdf" 
+                value="Score: 0" color="yellow" 
                 width="4" font="roboto"
                 look-at="#player" visible="false"></a-text>
         
         <a-text id="timer" position="3 2.8 -4" align="right" 
-                value="Time: 0:00" material="color: #00ff00; shader: msdf" 
+                value="Time: 0:00" color="#00ff00" 
                 width="4" font="roboto"
                 look-at="#player" visible="false"></a-text>
         
         <!-- Win/Lose status indicator during gameplay -->
         <a-text id="statusText" position="0 3.2 -4" align="center" 
                 value="🎯 Avoid the red obstacles to survive!" 
-                material="color: #f39c12; shader: msdf" width="4" font="roboto"
+                color="#f39c12" width="4" font="roboto"
                 look-at="#player" visible="false"></a-text>
         
         <a-text id="gameOver" position="0 2 -4" align="center" 
                 value="GAME OVER!\nClick to Restart" 
-                material="color: red; shader: msdf" width="6" 
+                color="red" width="6" 
                 font="roboto" visible="false"
                 look-at="#player"></a-text>
 
         <!-- VR Control Indicators -->
         <a-text id="vrStatus" position="0 -3.5 -4" align="center" 
-                value="VR Ready!" material="color: green; shader: msdf" 
+                value="VR Ready!" color="green" 
                 width="3" font="roboto" visible="false"
                 look-at="#player"></a-text>
     </a-scene>
@@ -618,11 +618,10 @@
             setTimeout(spawnObstacles, 2000);
         }
 
-        // Initialize game with repositioned intro screen
+        // Initialize game with colored intro screen
         document.querySelector('a-scene').addEventListener('loaded', function() {
-            console.log('Game loaded - introduction screen repositioned higher');
+            console.log('Game loaded - introduction screen with fixed colors ready');
         });
     </script>
 </body>
 </html>
-
