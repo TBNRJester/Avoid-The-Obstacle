@@ -23,7 +23,7 @@
                       look-controls="enabled: true">
                 <!-- Player visual indicator (hidden during intro) -->
                 <a-sphere id="playerSphere" position="0 -0.5 -1.5" radius="0.2" 
-                         material="color: #4285f4; metalness: 0.3; roughness: 0.4"
+                         material="color: #FF0000; metalness: 0.3; roughness: 0.4"
                          shadow="cast: true" visible="false"></a-sphere>
             </a-camera>
 
@@ -47,42 +47,42 @@
         <!-- Repositioned Introduction Screen with Fixed Colors -->
         <a-entity id="introScreen" visible="true">
             <!-- Background positioned higher up -->
-            <a-plane position="0 1.5 -2.5" width="4" height="2.5" 
+            <a-plane position="0 1.5 -2.5" width="4" height="3" 
                      material="color: #34495e; opacity: 0.95"></a-plane>
             
             <!-- Title - Red -->
             <a-text position="0 2.4 -2.4" align="center" 
-                    value="AVOID OBSTACLES" 
-                    color="#e74c3c" width="4" font="roboto"></a-text>
+                    value="AVOID THE OBSTACLES" 
+                    color="#FFFFFF" width="4" font="roboto"></a-text>
             
             <!-- Simple rule - Green -->
             <a-text position="0 2 -2.4" align="center" 
-                    value="Don't touch red boxes!" 
-                    color="#2ecc71" width="3" font="roboto"></a-text>
+                    value="Don’t touch the maroon boxes or you’ll die!" 
+                    color="#FF0000" width="3" font="roboto"></a-text>
             
             <!-- Controls - Blue -->
             <a-text position="0 1.6 -2.4" align="center" 
-                    value="SPACEBAR = Jump | S = Duck" 
-                    color="#3498db" width="3" font="roboto"></a-text>
+                    value="SPACEBAR = Jump | S = Duck | R = Stand" 
+                    color="#FFFFFF" width="3" font="roboto"></a-text>
             
             <!-- Strategy - Gray -->
             <a-text position="0 1.2 -2.4" align="center" 
-                    value="Jump over short • Duck under tall" 
-                    color="#95a5a6" width="3" font="roboto"></a-text>
+                    value="Jump over the short boxes • Duck under the tall boxes" 
+                    color="#FFFFFF" width="3" font="roboto"></a-text>
             
             <!-- Start Button -->
             <a-box id="startButton" position="0 0.7 -2.3" width="2" height="0.4" depth="0.1"
-                   material="color: #27ae60; roughness: 0.3; metalness: 0.7"
+                   material="color: #00FF00; roughness: 0.3; metalness: 0.7"
                    class="clickable"
                    animation="property: scale; to: 1.1 1.1 1.1; dur: 1000; dir: alternate; loop: true">
                 <a-text position="0 0 0.06" align="center" 
                         value="START GAME" 
-                        color="white" width="4" font="roboto"></a-text>
+                        color="black" width="4" font="roboto"></a-text>
             </a-box>
             
             <!-- Simple instruction - Orange -->
             <a-text position="0 0.3 -2.4" align="center" 
-                    value="Click START or press SPACEBAR" 
+                    value="Click START or press SPACEBAR to begin" 
                     color="#e67e22" width="3" font="roboto"></a-text>
         </a-entity>
         
@@ -104,7 +104,7 @@
         
         <!-- Win/Lose status indicator during gameplay -->
         <a-text id="statusText" position="0 3.2 -4" align="center" 
-                value="🎯 Avoid the red obstacles to survive!" 
+                value="🎯 Avoid the maroon obstacles to survive!" 
                 color="#f39c12" width="4" font="roboto"
                 look-at="#player" visible="false"></a-text>
         
